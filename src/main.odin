@@ -6,8 +6,11 @@ import "core:mem"
 import "core:strings"
 
 import "ed:buffer"
+import "ed:colors"
+import "ed:command"
 import "ed:font"
 import "ed:logger"
+import "ed:status"
 
 import rl "vendor:raylib"
 
@@ -30,7 +33,7 @@ main :: proc() {
     defer rl.CloseWindow()
 
     rl.SetExitKey(.KEY_NULL)
-    rl.SetTargetFPS(60)
+    rl.SetTargetFPS(144)
 
     {     // Maximize the Window
         monitor := rl.GetCurrentMonitor()
@@ -50,37 +53,44 @@ main :: proc() {
     assert(buffer_ok, "Failed to load test file")
     defer buffer.destroy(b)
 
+    command_buffer := command.CommandBuffer{}
+
     for !(rl.WindowShouldClose()) {
         rl.BeginDrawing()
 
-        rl.ClearBackground(rl.BLACK)
+        rl.ClearBackground(colors.BACKGROUND)
 
-        buffer.render(b)
+        inputs := command.tick(&command_buffer)
+
+        for input in inputs {
+            switch c in input {
+            case rune:
+                buffer.insert_rune(&b, c)
+            case command.Command:
+                #partial switch c.keys[0] {
+                case .LEFT:
+                    buffer.move_cursor_left(&b)
+                case .RIGHT:
+                    buffer.move_cursor_right(&b)
+                case .UP:
+                    buffer.move_cursor_up(&b)
+                case .DOWN:
+                    buffer.move_cursor_down(&b)
+                case .BACKSPACE:
+                    buffer.backspace_rune(&b)
+                case .DELETE:
+                    buffer.delete_rune(&b)
+                }
+            }
+        }
 
         if rl.GetMouseWheelMove() != 0 {
             b.scroll += rl.GetMouseWheelMove() > 0 ? -1 : 1
             b.scroll = clamp(b.scroll, 0, len(b.lines) - 1)
         }
 
-        if rl.IsKeyPressed(.LEFT) || rl.IsKeyPressedRepeat(.LEFT) {
-            buffer.move_cursor_left(&b)
-        } else if rl.IsKeyPressed(.RIGHT) || rl.IsKeyPressedRepeat(.RIGHT) {
-            buffer.move_cursor_right(&b)
-        } else if rl.IsKeyPressed(.UP) || rl.IsKeyPressedRepeat(.UP) {
-            buffer.move_cursor_up(&b)
-        } else if rl.IsKeyPressed(.DOWN) || rl.IsKeyPressedRepeat(.DOWN) {
-            buffer.move_cursor_down(&b)
-        }
-        
-        if rl.IsKeyPressed(.BACKSPACE) || rl.IsKeyPressedRepeat(.BACKSPACE) {
-            buffer.backspace_rune(&b)
-        } else if rl.IsKeyPressed(.DELETE) || rl.IsKeyPressedRepeat(.DELETE) {
-            buffer.delete_rune(&b)
-        }
-        
-        for c := rl.GetCharPressed(); c != rune(0); c = rl.GetCharPressed() {
-            buffer.insert_rune(&b, c)
-        }
+        buffer.render(b)
+        status.render(f, command_buffer, b)
 
         rl.EndDrawing()
 

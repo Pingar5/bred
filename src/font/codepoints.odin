@@ -16,5 +16,14 @@ generate_codepoint_list :: proc() {
         append(&codepoints, r)
     }
 
+    for key in rl.KeyboardKey {
+        key_str := command.key_to_str(key)
+        for r in string(key_str) {
+            if !slice.contains(codepoints[:], r) {
+                append(&codepoints, r)
+            }
+        }
+    }
+
     CODEPOINTS = codepoints[:]
 }

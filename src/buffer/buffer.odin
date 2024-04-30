@@ -4,6 +4,7 @@ import "core:fmt"
 import "core:log"
 import "core:os"
 import "core:strings"
+import "ed:font"
 import rl "vendor:raylib"
 
 Line :: struct {
@@ -21,13 +22,13 @@ Buffer :: struct {
     text:      string,
     cursor:    Cursor,
     lines:     [dynamic]Line,
-    font:      rl.Font,
+    font:      ^font.Font,
     scroll:    int,
 }
 
 load_file :: proc(
     file_name: string,
-    font: rl.Font,
+    font: ^font.Font,
     allocator := context.allocator,
 ) -> (
     b: Buffer,
@@ -42,7 +43,7 @@ load_file :: proc(
     return b, true
 }
 
-load_string :: proc(text: string, font: rl.Font, allocator := context.allocator) -> (b: Buffer) {
+load_string :: proc(text: string, font: ^font.Font, allocator := context.allocator) -> (b: Buffer) {
     stripped_text, was_alloc := strings.replace_all(text, "\r", "", context.allocator)
     if was_alloc do delete(text)
 
@@ -60,12 +61,12 @@ save :: proc(b: Buffer) -> bool {
         log.error("Cannot save buffer, it does not have a file path\n")
         return false
     }
-    
+
     ok := os.write_entire_file(b.file_path, transmute([]byte)(b.text))
     if !ok {
         log.error("Failed to write to file")
     }
-    
+
     return ok
 }
 

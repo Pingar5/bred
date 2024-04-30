@@ -6,6 +6,7 @@ import "core:mem"
 import "core:strings"
 
 import "ed:buffer"
+import "ed:font"
 import "ed:logger"
 
 import rl "vendor:raylib"
@@ -19,9 +20,14 @@ main :: proc() {
     mem.tracking_allocator_init(&tracking_allocator, allocator)
     allocator = mem.tracking_allocator(&tracking_allocator)
     context.allocator = allocator
+    defer {
+        check_tracking_allocator()
+        mem.tracking_allocator_destroy(&tracking_allocator)
+    }
 
     rl.SetTraceLogLevel(.NONE)
     rl.InitWindow(400, 400, "Editor")
+    defer rl.CloseWindow()
 
     rl.SetExitKey(.KEY_NULL)
     rl.SetTargetFPS(60)
@@ -34,11 +40,15 @@ main :: proc() {
         rl.SetWindowState({.WINDOW_MAXIMIZED, .WINDOW_RESIZABLE})
     }
 
-    font := rl.LoadFontEx("CodeNewRomanNerdFontMono-Regular.otf", 24, nil, 0)
-    rl.SetTextLineSpacing(font.baseSize)
+    font.init()
+    defer font.quit()
+    
+    f := font.load("CodeNewRomanNerdFontMono-Regular.otf")
+    defer font.unload(f)
 
-    b, buffer_ok := buffer.load_file("test.txt", font)
+    b, buffer_ok := buffer.load_file("test.txt", f)
     assert(buffer_ok, "Failed to load test file")
+    defer buffer.destroy(b)
 
     for !(rl.WindowShouldClose()) {
         rl.BeginDrawing()
@@ -76,14 +86,8 @@ main :: proc() {
 
         free_all(context.temp_allocator)
     }
-    
+
     buffer.save(b)
-
-    buffer.destroy(b)
-    rl.CloseWindow()
-
-    check_tracking_allocator()
-    mem.tracking_allocator_destroy(&tracking_allocator)
 }
 
 check_tracking_allocator :: proc() {

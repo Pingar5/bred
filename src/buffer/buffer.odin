@@ -1,7 +1,7 @@
 package buffer
 
-import "core:log"
 import "core:fmt"
+import "core:log"
 import "core:os"
 import "core:strings"
 import rl "vendor:raylib"
@@ -17,11 +17,12 @@ Cursor :: struct {
 }
 
 Buffer :: struct {
-    text:   string,
-    cursor: Cursor,
-    lines:  [dynamic]Line,
-    font:   rl.Font,
-    scroll: int,
+    file_path: string,
+    text:      string,
+    cursor:    Cursor,
+    lines:     [dynamic]Line,
+    font:      rl.Font,
+    scroll:    int,
 }
 
 load_file :: proc(
@@ -34,7 +35,11 @@ load_file :: proc(
 ) {
     buffer_data := os.read_entire_file(file_name, context.allocator) or_return
 
-    return load_string(string(buffer_data), font, allocator), true
+    b = load_string(string(buffer_data), font, allocator)
+
+    b.file_path = file_name
+
+    return b, true
 }
 
 load_string :: proc(text: string, font: rl.Font, allocator := context.allocator) -> (b: Buffer) {
@@ -50,6 +55,20 @@ load_string :: proc(text: string, font: rl.Font, allocator := context.allocator)
     return
 }
 
+save :: proc(b: Buffer) -> bool {
+    if b.file_path == "" {
+        log.error("Cannot save buffer, it does not have a file path\n")
+        return false
+    }
+    
+    ok := os.write_entire_file(b.file_path, transmute([]byte)(b.text))
+    if !ok {
+        log.error("Failed to write to file")
+    }
+    
+    return ok
+}
+
 insert_rune :: proc(b: ^Buffer, r: rune) {
     old_text := b.text
 
@@ -62,7 +81,7 @@ insert_rune :: proc(b: ^Buffer, r: rune) {
 
 backspace_rune :: proc(b: ^Buffer) {
     if b.cursor.absolute == 0 do return
-    
+
     old_text := b.text
 
     b.text = fmt.aprint(b.text[:b.cursor.absolute - 1], b.text[b.cursor.absolute:], sep = "")
@@ -74,7 +93,7 @@ backspace_rune :: proc(b: ^Buffer) {
 
 delete_rune :: proc(b: ^Buffer) {
     if b.cursor.absolute == len(b.text) do return
-    
+
     old_text := b.text
 
     b.text = fmt.aprint(b.text[:b.cursor.absolute], b.text[b.cursor.absolute + 1:], sep = "")
@@ -108,7 +127,7 @@ remap_lines :: proc(b: ^Buffer) {
             current_line.start = i + 1
         }
     }
-    
+
     for line_idx < len(b.lines) {
         pop(&b.lines)
     }

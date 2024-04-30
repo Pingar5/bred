@@ -76,6 +76,8 @@ main :: proc() {
 
         free_all(context.temp_allocator)
     }
+    
+    buffer.save(b)
 
     buffer.destroy(b)
     rl.CloseWindow()

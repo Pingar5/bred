@@ -2,7 +2,6 @@ package buffer
 
 import "core:fmt"
 import "core:strings"
-import "core:unicode/utf8"
 
 import "bred:colors"
 import "bred:font"

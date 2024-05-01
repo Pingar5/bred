@@ -13,7 +13,6 @@ Command :: union {
 }
 
 CommandTreeNode :: struct {
-    key:      rl.KeyboardKey,
     children: map[rl.KeyboardKey]^CommandTreeNode,
     command:  Command,
 }
@@ -30,10 +29,9 @@ CommandTree :: struct {
 tree: CommandTree
 
 @(private)
-create_node :: proc(key: rl.KeyboardKey) -> (node: ^CommandTreeNode) {
+create_node :: proc() -> (node: ^CommandTreeNode) {
     node = new(CommandTreeNode)
 
-    node.key = key
     node.children = make(map[rl.KeyboardKey]^CommandTreeNode)
 
     return
@@ -71,7 +69,7 @@ get_sub_node :: proc(
     if keys[0] in current.children {
         return get_sub_node(current.children[keys[0]], keys[1:], allow_create)
     } else if allow_create {
-        current.children[keys[0]] = create_node(keys[0])
+        current.children[keys[0]] = create_node()
 
         return get_sub_node(current.children[keys[0]], keys[1:], allow_create)
     } else {
@@ -80,33 +78,40 @@ get_sub_node :: proc(
 }
 
 @(private)
-get_node :: proc(keys: KeySequence, allow_create := false) -> (^CommandTreeNode, bool) {
+get_node :: proc(keys: KeySequence, allow_create := false) -> (cmd: ^CommandTreeNode, ok: bool) {
     root: ^CommandTreeNode
-    if keys.ctrl {
-        if keys.shift {
-            if keys.alt {
-                root = tree.ctrl_shift_alt
-            } else {
-                root = tree.ctrl_shift
-            }
-        } else if keys.alt {
-            root = tree.ctrl_alt
-        } else {
-            root = tree.ctrl
-        }
-    } else {
-        root = tree.normal
+    
+    if keys.alt && keys.shift && keys.ctrl {
+        cmd, ok = get_sub_node(tree.ctrl_shift_alt, keys.keys, allow_create)
+        if ok do return
     }
-
-    return get_sub_node(root, keys.keys, allow_create)
+    
+    if keys.shift && keys.ctrl {
+        cmd, ok = get_sub_node(tree.ctrl_shift, keys.keys, allow_create)
+        if ok do return
+    }
+    
+    if keys.alt && keys.ctrl {
+        cmd, ok = get_sub_node(tree.ctrl_alt, keys.keys, allow_create)
+        if ok do return
+    }
+    
+    if keys.ctrl {
+        cmd, ok = get_sub_node(tree.ctrl, keys.keys, allow_create)
+        if ok do return
+    }
+    
+    cmd, ok = get_sub_node(tree.normal, keys.keys, allow_create)
+    
+    return
 }
 
 init_command_tree :: proc() {
-    tree.normal = create_node(.KEY_NULL)
-    tree.ctrl = create_node(.KEY_NULL)
-    tree.ctrl_shift = create_node(.KEY_NULL)
-    tree.ctrl_alt = create_node(.KEY_NULL)
-    tree.ctrl_shift_alt = create_node(.KEY_NULL)
+    tree.normal = create_node()
+    tree.ctrl = create_node()
+    tree.ctrl_shift = create_node()
+    tree.ctrl_alt = create_node()
+    tree.ctrl_shift_alt = create_node()
 }
 
 destroy_command_tree :: proc() {

@@ -4,7 +4,7 @@ import "core:fmt"
 import "core:log"
 import "core:os"
 import "core:strings"
-import "ed:font"
+import "bred:font"
 import rl "vendor:raylib"
 
 Line :: struct {

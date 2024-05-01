@@ -5,12 +5,12 @@ import "core:log"
 import "core:mem"
 import "core:strings"
 
-import "ed:buffer"
-import "ed:colors"
-import "ed:command"
-import "ed:font"
-import "ed:logger"
-import "ed:status"
+import "bred:buffer"
+import "bred:colors"
+import "bred:command"
+import "bred:font"
+import "bred:logger"
+import "bred:status"
 
 import rl "vendor:raylib"
 

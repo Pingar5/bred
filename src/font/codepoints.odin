@@ -1,7 +1,7 @@
 package font
 
 import "core:slice"
-import "ed:util"
+import "bred:util"
 import rl "vendor:raylib"
 
 @(private)

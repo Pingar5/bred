@@ -1,11 +1,11 @@
 package status_bar
 
 import "core:strings"
-import "ed:buffer"
-import "ed:colors"
-import "ed:command"
-import "ed:util"
-import "ed:font"
+import "bred:buffer"
+import "bred:colors"
+import "bred:command"
+import "bred:util"
+import "bred:font"
 import rl "vendor:raylib"
 
 @(private)

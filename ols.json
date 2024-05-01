@@ -2,7 +2,7 @@
 	"$schema": "https://raw.githubusercontent.com/DanielGavin/ols/master/misc/ols.schema.json",
 	"collections": [
 		{
-			"name": "ed",
+			"name": "bred",
 			"path": "F:\\Github\\editor\\src"
 		}
 	],

@@ -4,8 +4,8 @@ import "core:fmt"
 import "core:strings"
 import "core:unicode/utf8"
 
-import "ed:colors"
-import "ed:font"
+import "bred:colors"
+import "bred:font"
 
 import rl "vendor:raylib"
 

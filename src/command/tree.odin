@@ -1,6 +1,6 @@
 package command
 
-import "ed:buffer"
+import "bred:buffer"
 
 import "core:fmt"
 import "core:log"

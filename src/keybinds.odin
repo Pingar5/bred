@@ -1,7 +1,7 @@
 package main
 
-import "ed:buffer"
-import "ed:command"
+import "bred:buffer"
+import "bred:command"
 
 register_keybinds :: proc() {
     {     // Normal Mode

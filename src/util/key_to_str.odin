@@ -104,3 +104,11 @@ key_to_str :: proc(key: rl.KeyboardKey) -> string {
     }
 }
 
+// I have no fucking idea who put this here, but when I deleted it the editor wouldn’t start.
+// Words cannot describe my fucking confusion.
+//▕╮╭┻┻╮╭┻┻╮╭▕╮╲
+//▕╯┃╭╮┃┃╭╮┃╰▕╯╭▏
+//▕╭┻┻┻┛┗┻┻┛ ╰▏
+//▕╰━━━┓┈┈┈╭╮▕╭╮▏
+//▕╭╮╰┳┳┳┳╯╰╯▕╰╯▏
+//▕╰╯┈┗┛┗┛┈╭╮▕╮┈▏

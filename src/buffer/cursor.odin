@@ -30,8 +30,7 @@ move_cursor_left :: proc(b: ^Buffer) {
     if b.cursor.column < 0 {
         b.cursor.line -= 1
 
-        new_line := b.lines[b.cursor.line]
-        b.cursor.column = new_line.end - new_line.start
+        b.cursor.column = get_line_length(b^, b.cursor.line) - 1
 
         ensure_cursor_visible(b, -1)
     }
@@ -45,8 +44,7 @@ move_cursor_right :: proc(b: ^Buffer) {
     b.cursor.absolute += 1
     b.cursor.column += 1
 
-    line := b.lines[b.cursor.line]
-    if b.cursor.column > line.end - line.start {
+    if b.cursor.column > get_line_length(b^, b.cursor.line) {
         b.cursor.line += 1
         b.cursor.column = 0
 
@@ -61,7 +59,7 @@ move_cursor_down :: proc(b: ^Buffer) {
     b.cursor.line = min(b.cursor.line, len(b.lines) - 1)
 
     new_line := b.lines[b.cursor.line]
-    b.cursor.column = min(b.cursor.virtual_column, new_line.end - new_line.start)
+    b.cursor.column = min(b.cursor.virtual_column, get_line_length(b^, b.cursor.line))
     b.cursor.absolute = new_line.start + b.cursor.column
 
     ensure_cursor_visible(b, 1)
@@ -72,7 +70,7 @@ move_cursor_up :: proc(b: ^Buffer) {
     b.cursor.line = max(b.cursor.line, 0)
 
     new_line := b.lines[b.cursor.line]
-    b.cursor.column = min(b.cursor.virtual_column, new_line.end - new_line.start)
+    b.cursor.column = min(b.cursor.virtual_column, get_line_length(b^, b.cursor.line))
     b.cursor.absolute = new_line.start + b.cursor.column
 
     ensure_cursor_visible(b, -1)

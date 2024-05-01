@@ -119,6 +119,11 @@ destroy :: proc(b: Buffer) {
     delete(b.lines)
 }
 
+get_line_length :: proc(b: Buffer, line_idx: int) -> int {
+    line := b.lines[line_idx]
+    return strings.rune_count(b.text[line.start:line.end])
+}
+
 @(private)
 remap_lines :: proc(b: ^Buffer) {
     line_idx: uint

@@ -5,6 +5,7 @@ import "core:strings"
 import "core:unicode/utf8"
 
 import "ed:font"
+import "ed:colors"
 
 import rl "vendor:raylib"
 
@@ -12,7 +13,13 @@ import rl "vendor:raylib"
 render_line :: proc(b: Buffer, line_idx, at_y: int) {
     line := b.lines[line_idx]
 
-    font.write(b.font, at_y, 0, fmt.tprintf("% 3d", line_idx + 1), rl.GRAY)
+    line_number: int
+    if line_idx == b.cursor.line {
+        font.write(b.font, at_y, 0, fmt.tprintf("%- 3d", line_idx + 1), colors.TEXT)
+    } else {
+        font.write(b.font, at_y, 0, fmt.tprintf("% 3d", abs(line_idx - b.cursor.line)), rl.GRAY)
+    }
+    
     font.write(b.font, at_y, 4, b.text[line.start:line.end], rl.WHITE)
 }
 

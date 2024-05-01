@@ -43,7 +43,13 @@ load_file :: proc(
     return b, true
 }
 
-load_string :: proc(text: string, font: ^font.Font, allocator := context.allocator) -> (b: Buffer) {
+load_string :: proc(
+    text: string,
+    font: ^font.Font,
+    allocator := context.allocator,
+) -> (
+    b: Buffer,
+) {
     stripped_text, was_alloc := strings.replace_all(text, "\r", "", context.allocator)
     if was_alloc do delete(text)
 
@@ -70,26 +76,43 @@ save :: proc(b: Buffer) -> bool {
     return ok
 }
 
-insert_rune :: proc(b: ^Buffer, r: rune) {
+insert_character :: proc(b: ^Buffer, r: byte) {
     old_text := b.text
 
-    b.text = fmt.aprint(b.text[:b.cursor.absolute], r, b.text[b.cursor.absolute:], sep = "")
+    b.text = fmt.aprint(b.text[:b.cursor.absolute], rune(r), b.text[b.cursor.absolute:], sep = "")
     delete(old_text)
 
     remap_lines(b)
     move_cursor_right(b)
 }
 
+insert_line :: proc(b: ^Buffer) {
+    insert_character(b, u8('\n'))
+}
+
 backspace_rune :: proc(b: ^Buffer) {
     if b.cursor.absolute == 0 do return
 
     old_text := b.text
+    removed := b.text[b.cursor.absolute - 1]
 
     b.text = fmt.aprint(b.text[:b.cursor.absolute - 1], b.text[b.cursor.absolute:], sep = "")
     delete(old_text)
 
-    remap_lines(b)
-    move_cursor_left(b)
+    if removed == '\n' {
+        b.cursor.line -= 1
+
+        line := b.lines[b.cursor.line]
+
+        b.cursor.column = get_line_length(b^, b.cursor.line)
+        b.cursor.absolute = line.end
+        b.cursor.virtual_column = b.cursor.column
+
+        remap_lines(b)
+    } else {
+        remap_lines(b)
+        move_cursor_left(b)
+    }
 }
 
 delete_rune :: proc(b: ^Buffer) {
@@ -111,7 +134,6 @@ delete_line :: proc(b: ^Buffer) {
     delete(old_text)
 
     remap_lines(b)
-    
 }
 
 destroy :: proc(b: Buffer) {
@@ -121,7 +143,7 @@ destroy :: proc(b: Buffer) {
 
 get_line_length :: proc(b: Buffer, line_idx: int) -> int {
     line := b.lines[line_idx]
-    return strings.rune_count(b.text[line.start:line.end])
+    return line.end - line.start
 }
 
 @(private)

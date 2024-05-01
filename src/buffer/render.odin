@@ -4,8 +4,8 @@ import "core:fmt"
 import "core:strings"
 import "core:unicode/utf8"
 
-import "ed:font"
 import "ed:colors"
+import "ed:font"
 
 import rl "vendor:raylib"
 
@@ -19,7 +19,7 @@ render_line :: proc(b: Buffer, line_idx, at_y: int) {
     } else {
         font.write(b.font, at_y, 0, fmt.tprintf("% 3d", abs(line_idx - b.cursor.line)), rl.GRAY)
     }
-    
+
     font.write(b.font, at_y, 4, b.text[line.start:line.end], rl.WHITE)
 }
 
@@ -38,14 +38,11 @@ render_cursor :: proc(b: Buffer) {
     )
 
     if b.cursor.column < get_line_length(b, b.cursor.line) {
-        line_runes := utf8.string_to_runes(b.text[line.start:line.end], context.temp_allocator)
-        character := line_runes[b.cursor.column]
-        
         font.write(
             b.font,
             screen_line,
             4 + column,
-            fmt.tprintf("%v", character),
+            b.text[line.start + b.cursor.column:line.start + b.cursor.column + 1],
             rl.BLACK,
         )
     }

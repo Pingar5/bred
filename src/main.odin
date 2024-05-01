@@ -64,6 +64,7 @@ main :: proc() {
         command.register({keys = {.DOWN}}, buffer.move_cursor_down)
         command.register({keys = {.BACKSPACE}}, buffer.backspace_rune)
         command.register({keys = {.DELETE}}, buffer.delete_rune)
+        command.register({keys = {.ENTER}}, buffer.insert_line)
         command.register({ctrl = true, keys = {.D, .D}}, buffer.delete_line)
     }
 
@@ -76,8 +77,8 @@ main :: proc() {
 
         for input in inputs {
             switch c in input {
-            case rune:
-                buffer.insert_rune(&b, c)
+            case byte:
+                buffer.insert_character(&b, c)
             case command.KeySequence:
                 cmd, command_exists := command.get_command(c)
                 if !command_exists do continue

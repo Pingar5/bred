@@ -26,7 +26,7 @@ CommandBuffer :: struct {
 }
 
 Input :: union {
-    rune,
+    byte,
     KeySequence,
 }
 
@@ -55,7 +55,7 @@ poll_normal_mode :: proc(cb: ^CommandBuffer, inputs: ^[dynamic]Input) {
         char := rl.GetCharPressed()
 
         if char != rune(0) {
-            append(inputs, char)
+            append(inputs, byte(char))
         } else {
             key_list := make([]rl.KeyboardKey, 1, context.temp_allocator)
             key_list[0] = key

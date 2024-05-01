@@ -2,6 +2,7 @@ package command
 
 import "ed:buffer"
 
+import "core:fmt"
 import "core:log"
 import "core:strings"
 import rl "vendor:raylib"
@@ -22,6 +23,7 @@ CommandTreeNode :: struct {
 CommandTree :: struct {
     normal:         ^CommandTreeNode,
     ctrl:           ^CommandTreeNode,
+    shift:          ^CommandTreeNode,
     ctrl_shift:     ^CommandTreeNode,
     ctrl_shift_alt: ^CommandTreeNode,
     ctrl_alt:       ^CommandTreeNode,
@@ -102,6 +104,11 @@ get_node :: proc(keys: KeySequence, allow_create := false) -> (cmd: ^CommandTree
         cmd, ok = get_sub_node(tree.ctrl, keys.keys, allow_create)
         if ok do return
     }
+    
+    if keys.shift {
+        cmd, ok = get_sub_node(tree.shift, keys.keys, allow_create)
+        if ok do return
+    }
 
     cmd, ok = get_sub_node(tree.normal, keys.keys, allow_create)
 
@@ -111,6 +118,7 @@ get_node :: proc(keys: KeySequence, allow_create := false) -> (cmd: ^CommandTree
 init_command_tree :: proc() {
     tree.normal = create_node()
     tree.ctrl = create_node()
+    tree.shift = create_node()
     tree.ctrl_shift = create_node()
     tree.ctrl_alt = create_node()
     tree.ctrl_shift_alt = create_node()
@@ -119,6 +127,7 @@ init_command_tree :: proc() {
 destroy_command_tree :: proc() {
     delete_node(tree.normal)
     delete_node(tree.ctrl)
+    delete_node(tree.shift)
     delete_node(tree.ctrl_shift)
     delete_node(tree.ctrl_alt)
     delete_node(tree.ctrl_shift_alt)
@@ -128,7 +137,7 @@ register_command :: proc(keys: KeySequence, command: Command) {
     node, ok := get_node(keys, true)
 
     assert(ok, "Failed to create command tree node")
-    assert(node.command == nil, "Command already exists with that key sequence")
+    assert(node.command == nil, fmt.tprintf("Command already exists with key sequence: %#v", keys))
 
     node.command = command
 }

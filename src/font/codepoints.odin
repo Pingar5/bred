@@ -1,7 +1,7 @@
 package font
 
 import "core:slice"
-import "ed:command"
+import "ed:util"
 import rl "vendor:raylib"
 
 @(private)
@@ -17,7 +17,7 @@ generate_codepoint_list :: proc() {
     }
 
     for key in rl.KeyboardKey {
-        key_str := command.key_to_str(key)
+        key_str := util.key_to_str(key)
         for r in string(key_str) {
             if !slice.contains(codepoints[:], r) {
                 append(&codepoints, r)

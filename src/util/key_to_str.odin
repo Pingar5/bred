@@ -1,4 +1,4 @@
-package command
+package util
 
 import rl "vendor:raylib"
 
@@ -103,3 +103,4 @@ key_to_str :: proc(key: rl.KeyboardKey) -> string {
         return ""
     }
 }
+

@@ -45,7 +45,7 @@ main :: proc() {
 
     font.init()
     defer font.quit()
-    
+
     f := font.load("CodeNewRomanNerdFontMono-Regular.otf")
     defer font.unload(f)
 
@@ -54,6 +54,18 @@ main :: proc() {
     defer buffer.destroy(b)
 
     command_buffer := command.CommandBuffer{}
+
+    command.init_command_tree()
+    defer command.destroy_command_tree()
+    {     // Register commands
+        command.register({keys = {.LEFT}}, buffer.move_cursor_left)
+        command.register({keys = {.RIGHT}}, buffer.move_cursor_right)
+        command.register({keys = {.UP}}, buffer.move_cursor_up)
+        command.register({keys = {.DOWN}}, buffer.move_cursor_down)
+        command.register({keys = {.BACKSPACE}}, buffer.backspace_rune)
+        command.register({keys = {.DELETE}}, buffer.delete_rune)
+        command.register({ctrl = true, keys = {.D, .D}}, buffer.delete_line)
+    }
 
     for !(rl.WindowShouldClose()) {
         rl.BeginDrawing()
@@ -66,20 +78,13 @@ main :: proc() {
             switch c in input {
             case rune:
                 buffer.insert_rune(&b, c)
-            case command.Command:
-                #partial switch c.keys[0] {
-                case .LEFT:
-                    buffer.move_cursor_left(&b)
-                case .RIGHT:
-                    buffer.move_cursor_right(&b)
-                case .UP:
-                    buffer.move_cursor_up(&b)
-                case .DOWN:
-                    buffer.move_cursor_down(&b)
-                case .BACKSPACE:
-                    buffer.backspace_rune(&b)
-                case .DELETE:
-                    buffer.delete_rune(&b)
+            case command.KeySequence:
+                cmd, command_exists := command.get_command(c)
+                if !command_exists do continue
+
+                switch cmd_proc in cmd {
+                case command.BufferCommand:
+                    cmd_proc(&b)
                 }
             }
         }

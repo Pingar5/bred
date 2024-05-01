@@ -103,6 +103,17 @@ delete_rune :: proc(b: ^Buffer) {
     remap_lines(b)
 }
 
+delete_line :: proc(b: ^Buffer) {
+    line := b.lines[b.cursor.line]
+    old_text := b.text
+
+    b.text = fmt.aprint(b.text[:line.start], b.text[line.end + 1:], sep = "")
+    delete(old_text)
+
+    remap_lines(b)
+    
+}
+
 destroy :: proc(b: Buffer) {
     delete(b.text)
     delete(b.lines)

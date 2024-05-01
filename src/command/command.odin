@@ -13,7 +13,7 @@ Modifier :: struct {
     held_for:        f32,
 }
 
-Command :: struct {
+KeySequence :: struct {
     ctrl, shift, alt: bool,
     keys:             []rl.KeyboardKey,
 }
@@ -27,7 +27,7 @@ CommandBuffer :: struct {
 
 Input :: union {
     rune,
-    Command,
+    KeySequence,
 }
 
 tick :: proc(cb: ^CommandBuffer) -> []Input {
@@ -57,13 +57,16 @@ poll_normal_mode :: proc(cb: ^CommandBuffer, inputs: ^[dynamic]Input) {
         if char != rune(0) {
             append(inputs, char)
         } else {
+            key_list := make([]rl.KeyboardKey, 1, context.temp_allocator)
+            key_list[0] = key
+
             append(
                 inputs,
-                Command {
+                KeySequence {
                     ctrl = false,
                     shift = cb.shift.enabled || cb.shift.held,
                     alt = cb.alt.enabled || cb.alt.held,
-                    keys = []rl.KeyboardKey{key},
+                    keys = key_list,
                 },
             )
         }
@@ -92,21 +95,24 @@ poll_control_mode :: proc(cb: ^CommandBuffer, inputs: ^[dynamic]Input) {
         cb.keys_length += 1
     }
 
-    if cb.keys_length > 0 && (cb.timer > COMMAND_TIMEOUT || cb.keys_length == len(cb.keys)) {
-        append(
-            inputs,
-            Command {
-                ctrl = cb.ctrl.enabled || cb.ctrl.held,
-                shift = cb.shift.enabled || cb.shift.held,
-                alt = cb.alt.enabled || cb.alt.held,
-                keys = cb.keys[:cb.keys_length],
-            },
-        )
-        cb.keys_length = 0
+    if cb.keys_length > 0 {
+        keys := KeySequence {
+            ctrl  = cb.ctrl.enabled || cb.ctrl.held,
+            shift = cb.shift.enabled || cb.shift.held,
+            alt   = cb.alt.enabled || cb.alt.held,
+            keys  = cb.keys[:cb.keys_length],
+        }
 
-        cb.ctrl.enabled = cb.ctrl.locked
-        cb.alt.enabled = cb.alt.locked
-        cb.shift.enabled = cb.shift.locked
+        if (is_leaf_or_invalid(keys) ||
+               cb.timer > COMMAND_TIMEOUT ||
+               cb.keys_length == len(cb.keys)) {
+            append(inputs, keys)
+            cb.keys_length = 0
+
+            cb.ctrl.enabled = cb.ctrl.locked
+            cb.alt.enabled = cb.alt.locked
+            cb.shift.enabled = cb.shift.locked
+        }
     }
 }
 

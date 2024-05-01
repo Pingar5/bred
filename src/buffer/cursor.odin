@@ -75,3 +75,35 @@ move_cursor_up :: proc(b: ^Buffer) {
 
     ensure_cursor_visible(b, -1)
 }
+
+jump_to_line_end :: proc(b: ^Buffer) {
+    b.cursor.column = get_line_length(b^, b.cursor.line)
+    b.cursor.absolute = b.lines[b.cursor.line].start + b.cursor.column
+}
+
+jump_to_line_start :: proc(b: ^Buffer) {
+    b.cursor.column = 0
+    b.cursor.absolute = b.lines[b.cursor.line].start
+}
+
+page_up :: proc(b: ^Buffer) {
+    b.cursor.line -= 15
+    b.cursor.line = max(b.cursor.line, 0)
+
+    new_line := b.lines[b.cursor.line]
+    b.cursor.column = min(b.cursor.virtual_column, get_line_length(b^, b.cursor.line))
+    b.cursor.absolute = new_line.start + b.cursor.column
+
+    ensure_cursor_visible(b, -1)
+}
+
+page_down :: proc(b: ^Buffer) {
+    b.cursor.line += 15
+    b.cursor.line = min(b.cursor.line, len(b.lines) - 1)
+
+    new_line := b.lines[b.cursor.line]
+    b.cursor.column = min(b.cursor.virtual_column, get_line_length(b^, b.cursor.line))
+    b.cursor.absolute = new_line.start + b.cursor.column
+
+    ensure_cursor_visible(b, 1)
+}

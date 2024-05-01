@@ -7,9 +7,11 @@ import "core:strings"
 import rl "vendor:raylib"
 
 BufferCommand :: proc(buffer: ^buffer.Buffer)
+CommandBufferCommand :: proc(command_buffer: ^CommandBuffer)
 
 Command :: union {
     BufferCommand,
+    CommandBufferCommand,
 }
 
 CommandTreeNode :: struct {
@@ -80,29 +82,29 @@ get_sub_node :: proc(
 @(private)
 get_node :: proc(keys: KeySequence, allow_create := false) -> (cmd: ^CommandTreeNode, ok: bool) {
     root: ^CommandTreeNode
-    
+
     if keys.alt && keys.shift && keys.ctrl {
         cmd, ok = get_sub_node(tree.ctrl_shift_alt, keys.keys, allow_create)
         if ok do return
     }
-    
+
     if keys.shift && keys.ctrl {
         cmd, ok = get_sub_node(tree.ctrl_shift, keys.keys, allow_create)
         if ok do return
     }
-    
+
     if keys.alt && keys.ctrl {
         cmd, ok = get_sub_node(tree.ctrl_alt, keys.keys, allow_create)
         if ok do return
     }
-    
+
     if keys.ctrl {
         cmd, ok = get_sub_node(tree.ctrl, keys.keys, allow_create)
         if ok do return
     }
-    
+
     cmd, ok = get_sub_node(tree.normal, keys.keys, allow_create)
-    
+
     return
 }
 
@@ -122,13 +124,26 @@ destroy_command_tree :: proc() {
     delete_node(tree.ctrl_shift_alt)
 }
 
-register :: proc(keys: KeySequence, command: Command) {
+register_command :: proc(keys: KeySequence, command: Command) {
     node, ok := get_node(keys, true)
 
     assert(ok, "Failed to create command tree node")
     assert(node.command == nil, "Command already exists with that key sequence")
 
     node.command = command
+}
+
+register_buffer_command :: proc(keys: KeySequence, command: BufferCommand) {
+    register_command(keys, command)
+}
+
+register_command_buffer_command :: proc(keys: KeySequence, command: CommandBufferCommand) {
+    register_command(keys, command)
+}
+
+register :: proc {
+    register_buffer_command,
+    register_command_buffer_command,
 }
 
 is_leaf_or_invalid :: proc(keys: KeySequence) -> bool {

@@ -57,16 +57,7 @@ main :: proc() {
 
     command.init_command_tree()
     defer command.destroy_command_tree()
-    {     // Register commands
-        command.register({keys = {.LEFT}}, buffer.move_cursor_left)
-        command.register({keys = {.RIGHT}}, buffer.move_cursor_right)
-        command.register({keys = {.UP}}, buffer.move_cursor_up)
-        command.register({keys = {.DOWN}}, buffer.move_cursor_down)
-        command.register({keys = {.BACKSPACE}}, buffer.backspace_rune)
-        command.register({keys = {.DELETE}}, buffer.delete_rune)
-        command.register({keys = {.ENTER}}, buffer.insert_line)
-        command.register({ctrl = true, keys = {.D, .D}}, buffer.delete_line)
-    }
+    register_keybinds()
 
     for !(rl.WindowShouldClose()) {
         rl.BeginDrawing()
@@ -86,6 +77,8 @@ main :: proc() {
                 switch cmd_proc in cmd {
                 case command.BufferCommand:
                     cmd_proc(&b)
+                case command.CommandBufferCommand:
+                    cmd_proc(&command_buffer)
                 }
             }
         }

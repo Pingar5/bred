@@ -46,6 +46,17 @@ tick :: proc(cb: ^CommandBuffer) -> []Input {
     return inputs[:]
 }
 
+clear_modifiers :: proc(cb: ^CommandBuffer) {
+    cb.ctrl.enabled = false
+    cb.ctrl.locked = false
+    
+    cb.shift.enabled = false
+    cb.shift.locked = false
+    
+    cb.alt.enabled = false
+    cb.alt.locked = false
+}
+
 @(private)
 poll_normal_mode :: proc(cb: ^CommandBuffer, inputs: ^[dynamic]Input) {
     for {

@@ -89,7 +89,7 @@ main :: proc() {
         }
 
         buffer.render(b, {components = {3, 0, 20, 5}})
-        status.render(f, command_buffer, b)
+        status.render(f, command_buffer, b, {components = {0, 24, 60, 1}})
 
         rl.EndDrawing()
 

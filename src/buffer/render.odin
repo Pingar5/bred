@@ -12,35 +12,35 @@ import rl "vendor:raylib"
 @(private = "file")
 render_fragment :: proc(b: Buffer, fragment: string, pos: math.Position, max_length: int, color: rl.Color) -> (consumed_length: int) {
     visible := len(fragment) < max_length ? fragment : fragment[:max_length]
-    font.write(b.font, pos.y, pos.x, visible, color)
+    font.write(b.font, pos, visible, color)
     return len(visible)
 }
 
 @(private = "file")
-render_line :: proc(b: Buffer, buffer_line, screen_line: int, x_offset, max_length: int) {
+render_line :: proc(b: Buffer, screen_pos: math.Position, buffer_line, max_length: int) {
     line := b.lines[buffer_line]
     remaining_length := max_length
 
     line_number_fragment: string
     line_number_color: rl.Color
-    if buffer_line == b.cursor.line {
+    if buffer_line == b.cursor.pos.y {
         line_number_fragment = fmt.tprintf("%- 3d", buffer_line + 1)
         line_number_color = colors.TEXT
     } else {
-        line_number_fragment = fmt.tprintf("% 3d", abs(buffer_line - b.cursor.line))
+        line_number_fragment = fmt.tprintf("% 3d", abs(buffer_line - b.cursor.pos.y))
         line_number_color = rl.GRAY
     }
     
-    remaining_length -= render_fragment(b, line_number_fragment, {x_offset, screen_line}, max_length, line_number_color)
-    render_fragment(b, b.text[line.start:line.end], {x_offset + 4, screen_line}, remaining_length, rl.WHITE)
+    remaining_length -= render_fragment(b, line_number_fragment, screen_pos, max_length, line_number_color)
+    render_fragment(b, b.text[line.start:line.end], screen_pos + {4, 0}, remaining_length, rl.WHITE)
 }
 
 @(private = "file")
 render_cursor :: proc(b: Buffer, rect: math.Rect) {
-    line := b.lines[b.cursor.line]
+    line := b.lines[b.cursor.pos.y]
 
-    column := min(b.cursor.column, line.end - line.start)
-    portal_line := b.cursor.line - b.scroll
+    column := min(b.cursor.pos.x, line.end - line.start)
+    portal_line := b.cursor.pos.y - b.scroll
     
     if column >= rect.width || portal_line >= rect.height || portal_line < 0 do return
     
@@ -53,12 +53,11 @@ render_cursor :: proc(b: Buffer, rect: math.Rect) {
         rl.WHITE,
     )
 
-    if b.cursor.column < get_line_length(b, b.cursor.line) {
+    if b.cursor.pos.x < get_line_length(b, b.cursor.pos.y) {
         font.write(
             b.font,
-            screen_pos.y,
-            screen_pos.x,
-            b.text[line.start + b.cursor.column:line.start + b.cursor.column + 1],
+            screen_pos,
+            b.text[line.start + b.cursor.pos.x:line.start + b.cursor.pos.x + 1],
             rl.BLACK,
         )
     }
@@ -71,7 +70,7 @@ render :: proc(b: Buffer, rect: math.Rect) {
 
         if buffer_line >= len(b.lines) do break
 
-        render_line(b, buffer_line, screen_line, rect.left, rect.width)
+        render_line(b, {rect.left, screen_line}, buffer_line, rect.width)
     }
 
     render_cursor(b, rect)

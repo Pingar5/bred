@@ -1,12 +1,13 @@
 package font
 
+import "bred:math"
+
 import "core:strings"
 import rl "vendor:raylib"
 
 write :: proc(
     font: ^Font,
-    #any_int line: i32,
-    #any_int column: i32,
+    pos: math.Position,
     text: string,
     color: rl.Color,
 ) -> (
@@ -16,11 +17,11 @@ write :: proc(
     rl.DrawTextEx(
         font.font,
         c_text,
-        {f32(column * font.character_size.x), f32(line * font.character_size.y)},
+        {f32(i32(pos.x) * font.character_size.x), f32(i32(pos.y) * font.character_size.y)},
         font.size,
         0,
         color,
     )
 
-    return int(column) + strings.rune_count(text)
+    return pos.x + strings.rune_count(text)
 }

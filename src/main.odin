@@ -5,8 +5,6 @@ import "bred:colors"
 import "bred:command"
 import "bred:font"
 import "bred:logger"
-import "bred:portal"
-import "bred:status"
 import "bred:editor"
 import "user:config"
 
@@ -15,8 +13,6 @@ import "core:mem"
 import rl "vendor:raylib"
 
 tracking_allocator: mem.Tracking_Allocator
-
-portals: [8]portal.Portal
 
 main :: proc() {
     context.logger = logger.create_logger()

@@ -1,24 +1,14 @@
 package command
 
-import "bred:buffer"
-
 import "core:fmt"
 import "core:log"
 import rl "vendor:raylib"
 
-BufferCommand :: proc(buffer: ^buffer.Buffer)
-CommandBufferCommand :: proc(command_buffer: ^CommandBuffer)
-EditorCommand :: proc(editor_state: rawptr)
-
-Command :: union {
-    BufferCommand,
-    CommandBufferCommand,
-    EditorCommand,
-}
+CommandProc :: proc(editor_state: ^EditorState) -> (ok: bool)
 
 CommandTreeNode :: struct {
     children: map[rl.KeyboardKey]^CommandTreeNode,
-    command:  Command,
+    command:  CommandProc,
 }
 
 MODIFIER_SET_PRECEDENCE :: [8]Modifiers {
@@ -113,31 +103,13 @@ destroy_command_tree :: proc() {
     }
 }
 
-register_command :: proc(keys: KeySequence, command: Command) {
+register :: proc(keys: KeySequence, command: CommandProc) {
     node, ok := get_node(keys, true)
 
     assert(ok, "Failed to create command tree node")
     assert(node.command == nil, fmt.tprintf("Command already exists with key sequence: %#v", keys))
 
     node.command = command
-}
-
-register_buffer_command :: proc(keys: KeySequence, command: BufferCommand) {
-    register_command(keys, command)
-}
-
-register_command_buffer_command :: proc(keys: KeySequence, command: CommandBufferCommand) {
-    register_command(keys, command)
-}
-
-register_editor_command :: proc(keys: KeySequence, command: EditorCommand) {
-    register_command(keys, command)
-}
-
-register :: proc {
-    register_buffer_command,
-    register_command_buffer_command,
-    register_editor_command,
 }
 
 is_leaf_or_invalid :: proc(keys: KeySequence) -> bool {
@@ -148,10 +120,12 @@ is_leaf_or_invalid :: proc(keys: KeySequence) -> bool {
     return len(node.children) == 0
 }
 
-get_command :: proc(keys: KeySequence) -> (command: Command, ok: bool) {
-    node := get_node(keys) or_return
+get_command :: proc(keys: KeySequence) -> (command: CommandProc) {
+    node, node_found := get_node(keys)
 
-    if node.command == nil do return nil, false
-
-    return node.command, true
+    if node_found && node.command != nil {
+        return node.command
+    } else {
+        return tree.default_command
+    }
 }

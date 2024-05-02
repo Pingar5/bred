@@ -44,14 +44,7 @@ update :: proc(state: ^EditorState) {
             cmd, command_exists := get_command(c)
             if !command_exists do continue
 
-            switch cmd_proc in cmd {
-            case BufferCommand:
-                cmd_proc(active_buffer)
-            case CommandBufferCommand:
-                cmd_proc(&state.command_buffer)
-            case EditorCommand:
-                cmd_proc(state)
-            }
+            cmd(state)
         }
     }
 

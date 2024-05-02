@@ -10,14 +10,14 @@ import "bred:math"
 import rl "vendor:raylib"
 
 @(private = "file")
-render_fragment :: proc(b: Buffer, fragment: string, pos: math.Position, max_length: int, color: rl.Color) -> (consumed_length: int) {
+render_fragment :: proc(b: ^Buffer, fragment: string, pos: math.Position, max_length: int, color: rl.Color) -> (consumed_length: int) {
     visible := len(fragment) < max_length ? fragment : fragment[:max_length]
     font.write(b.font, pos, visible, color)
     return len(visible)
 }
 
 @(private = "file")
-render_line :: proc(b: Buffer, screen_pos: math.Position, buffer_line, max_length: int) {
+render_line :: proc(b: ^Buffer, screen_pos: math.Position, buffer_line, max_length: int) {
     line := b.lines[buffer_line]
     remaining_length := max_length
 
@@ -36,7 +36,7 @@ render_line :: proc(b: Buffer, screen_pos: math.Position, buffer_line, max_lengt
 }
 
 @(private = "file")
-render_cursor :: proc(b: Buffer, rect: math.Rect) {
+render_cursor :: proc(b: ^Buffer, rect: math.Rect) {
     line := b.lines[b.cursor.pos.y]
 
     column := min(b.cursor.pos.x, line.end - line.start)
@@ -63,7 +63,15 @@ render_cursor :: proc(b: Buffer, rect: math.Rect) {
     }
 }
 
-render :: proc(b: Buffer, rect: math.Rect) {
+render :: proc(b: ^Buffer, rect: math.Rect) {
+    rl.DrawRectangle(
+        b.font.character_size.x * i32(rect.left),
+        b.font.character_size.y * i32(rect.top),
+        b.font.character_size.x * 3,
+        b.font.character_size.y * i32(rect.height),
+        colors.GUTTER_BACKGROUND,
+    )
+    
     for line_offset in 0 ..< rect.height {
         screen_line := rect.top + line_offset
         buffer_line := b.scroll + line_offset
@@ -74,9 +82,4 @@ render :: proc(b: Buffer, rect: math.Rect) {
     }
 
     render_cursor(b, rect)
-}
-
-@(private)
-get_visible_line_count :: proc(b: Buffer) -> int {
-    return int(rl.GetScreenHeight() / b.font.font.baseSize)
 }

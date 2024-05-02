@@ -1,5 +1,7 @@
 package font
 
+import "bred:math"
+
 import rl "vendor:raylib"
 
 FONT_SIZE :: 24
@@ -33,4 +35,9 @@ load :: proc(file_name: cstring, allocator := context.allocator) -> (font: ^Font
 unload :: proc(font: ^Font) {
     rl.UnloadFont(font.font)
     free(font)
+}
+
+calculate_window_dims :: proc(font: ^Font) -> math.Position {
+    screen_width, screen_height := rl.GetScreenWidth(), rl.GetScreenHeight()
+    return {int(screen_width / font.character_size.x), int(screen_height / font.character_size.y)}
 }

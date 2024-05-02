@@ -10,11 +10,14 @@ import "bred:colors"
 import "bred:command"
 import "bred:font"
 import "bred:logger"
+import "bred:portal"
 import "bred:status"
 
 import rl "vendor:raylib"
 
 tracking_allocator: mem.Tracking_Allocator
+
+portals: [8]portal.Portal
 
 main :: proc() {
     context.logger = logger.create_logger()
@@ -53,7 +56,37 @@ main :: proc() {
     assert(buffer_ok, "Failed to load test file")
     defer buffer.destroy(b)
 
+    b2, buffer2_ok := buffer.load_file("test2.txt", f)
+    assert(buffer2_ok, "Failed to load test file")
+    defer buffer.destroy(b2)
+
     command_buffer := command.CommandBuffer{}
+
+    status_bar := status.StatusBar {
+        font          = f,
+        cb            = &command_buffer,
+        active_buffer = &b,
+    }
+
+    window_dims := font.calculate_window_dims(f)
+
+    portals[0] = {
+        active = true,
+        contents = &b,
+        rect = {components = {0, 0, window_dims.x / 2, window_dims.y - 1}},
+    }
+
+    portals[1] = {
+        active = true,
+        contents = &b2,
+        rect = {components = {window_dims.x / 2, 0, window_dims.x / 2, window_dims.y - 1}},
+    }
+
+    portals[2] = {
+        active = true,
+        contents = &status_bar,
+        rect = {components = {0, window_dims.y - 1, window_dims.x, 1}},
+    }
 
     command.init_command_tree()
     defer command.destroy_command_tree()
@@ -88,8 +121,11 @@ main :: proc() {
             b.scroll = clamp(b.scroll, 0, len(b.lines) - 1)
         }
 
-        buffer.render(b, {components = {3, 0, 20, 5}})
-        status.render(f, command_buffer, b, {components = {0, 24, 60, 1}})
+        for &p in portals {
+            if p.active {
+                portal.render(&p)
+            }
+        }
 
         rl.EndDrawing()
 

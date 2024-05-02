@@ -124,7 +124,7 @@ backspace_rune :: proc(b: ^Buffer) {
 
         line := b.lines[b.cursor.pos.y]
 
-        b.cursor.pos.x = get_line_length(b^, b.cursor.pos.y)
+        b.cursor.pos.x = get_line_length(b, b.cursor.pos.y)
         b.cursor.index = line.end
         b.cursor.virtual_column = b.cursor.pos.x
     } else {
@@ -153,7 +153,7 @@ destroy :: proc(b: Buffer) {
     delete(b.lines)
 }
 
-get_line_length :: proc(b: Buffer, line_idx: int) -> int {
+get_line_length :: proc(b: ^Buffer, line_idx: int) -> int {
     line := b.lines[line_idx]
     return line.end - line.start
 }

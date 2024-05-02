@@ -16,7 +16,7 @@ StatusBar :: struct {
 
 @(private)
 draw_modifier :: proc(
-    mod: command.Modifier,
+    mod: command.ModifierState,
     mod_str: string,
     column: ^int,
     line: int,

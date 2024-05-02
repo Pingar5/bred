@@ -7,19 +7,26 @@ import rl "vendor:raylib"
 MOD_HOLD_MINIMUM :: 0.15
 COMMAND_TIMEOUT :: 0.2
 
-Modifier :: struct {
+ModifierState :: struct {
     enabled, locked: bool,
     held:            bool,
     held_for:        f32,
 }
 
+Modifier :: enum {
+    Ctrl,
+    Shift,
+    Alt,
+}
+Modifiers :: bit_set[Modifier; u8]
+
 KeySequence :: struct {
-    ctrl, shift, alt: bool,
-    keys:             []rl.KeyboardKey,
+    modifiers: Modifiers,
+    keys:      []rl.KeyboardKey,
 }
 
 CommandBuffer :: struct {
-    ctrl, shift, alt: Modifier,
+    ctrl, shift, alt: ModifierState,
     keys_length:      uint,
     keys:             [8]rl.KeyboardKey,
     timer:            f32,
@@ -49,10 +56,10 @@ tick :: proc(cb: ^CommandBuffer) -> []Input {
 clear_modifiers :: proc(cb: ^CommandBuffer) {
     cb.ctrl.enabled = false
     cb.ctrl.locked = false
-    
+
     cb.shift.enabled = false
     cb.shift.locked = false
-    
+
     cb.alt.enabled = false
     cb.alt.locked = false
 }
@@ -71,15 +78,11 @@ poll_normal_mode :: proc(cb: ^CommandBuffer, inputs: ^[dynamic]Input) {
             key_list := make([]rl.KeyboardKey, 1, context.temp_allocator)
             key_list[0] = key
 
-            append(
-                inputs,
-                KeySequence {
-                    ctrl = false,
-                    shift = cb.shift.enabled || cb.shift.held,
-                    alt = cb.alt.enabled || cb.alt.held,
-                    keys = key_list,
-                },
-            )
+            modifiers: Modifiers
+            if cb.shift.enabled || cb.shift.held do modifiers += {.Shift}
+            if cb.alt.enabled || cb.alt.held do modifiers += {.Alt}
+
+            append(inputs, KeySequence{modifiers, key_list})
         }
     }
 }
@@ -107,12 +110,12 @@ poll_control_mode :: proc(cb: ^CommandBuffer, inputs: ^[dynamic]Input) {
     }
 
     if cb.keys_length > 0 {
-        keys := KeySequence {
-            ctrl  = cb.ctrl.enabled || cb.ctrl.held,
-            shift = cb.shift.enabled || cb.shift.held,
-            alt   = cb.alt.enabled || cb.alt.held,
-            keys  = cb.keys[:cb.keys_length],
-        }
+        modifiers: Modifiers
+        if cb.ctrl.enabled || cb.ctrl.held do modifiers += {.Ctrl}
+        if cb.shift.enabled || cb.shift.held do modifiers += {.Shift}
+        if cb.alt.enabled || cb.alt.held do modifiers += {.Alt}
+
+        keys := KeySequence{modifiers, cb.keys[:cb.keys_length]}
 
         if (is_leaf_or_invalid(keys) ||
                cb.timer > COMMAND_TIMEOUT ||
@@ -128,7 +131,7 @@ poll_control_mode :: proc(cb: ^CommandBuffer, inputs: ^[dynamic]Input) {
 }
 
 @(private)
-update_modifier :: proc(mod: ^Modifier, left, right: rl.KeyboardKey) {
+update_modifier :: proc(mod: ^ModifierState, left, right: rl.KeyboardKey) {
     if rl.IsKeyPressed(left) || rl.IsKeyPressed(right) do mod.held_for = 0
 
     mod.held = rl.IsKeyDown(left) || rl.IsKeyDown(right)

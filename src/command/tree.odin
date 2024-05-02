@@ -21,13 +21,18 @@ CommandTreeNode :: struct {
     command:  Command,
 }
 
+MODIFIER_SET_PRECEDENCE :: [8]Modifiers {
+    {.Ctrl, .Shift, .Alt},
+    {.Ctrl, .Shift},
+    {.Ctrl, .Alt},
+    {.Shift, .Alt},
+    {.Ctrl},
+    {.Shift},
+    {.Alt},
+    {},
+}
 CommandTree :: struct {
-    normal:         ^CommandTreeNode,
-    ctrl:           ^CommandTreeNode,
-    shift:          ^CommandTreeNode,
-    ctrl_shift:     ^CommandTreeNode,
-    ctrl_shift_alt: ^CommandTreeNode,
-    ctrl_alt:       ^CommandTreeNode,
+    roots: [8]^CommandTreeNode,
 }
 
 @(private)
@@ -84,52 +89,28 @@ get_sub_node :: proc(
 
 @(private)
 get_node :: proc(keys: KeySequence, allow_create := false) -> (cmd: ^CommandTreeNode, ok: bool) {
-    if keys.alt && keys.shift && keys.ctrl {
-        cmd, ok = get_sub_node(tree.ctrl_shift_alt, keys.keys, allow_create)
-        if ok do return
-    }
+    for modifiers in MODIFIER_SET_PRECEDENCE {
+        if modifiers <= keys.modifiers {
+            root := tree.roots[transmute(u8)(modifiers)]
 
-    if keys.shift && keys.ctrl {
-        cmd, ok = get_sub_node(tree.ctrl_shift, keys.keys, allow_create)
-        if ok do return
+            cmd, ok = get_sub_node(root, keys.keys, allow_create)
+            if ok do return
+        }
     }
-
-    if keys.alt && keys.ctrl {
-        cmd, ok = get_sub_node(tree.ctrl_alt, keys.keys, allow_create)
-        if ok do return
-    }
-
-    if keys.ctrl {
-        cmd, ok = get_sub_node(tree.ctrl, keys.keys, allow_create)
-        if ok do return
-    }
-
-    if keys.shift {
-        cmd, ok = get_sub_node(tree.shift, keys.keys, allow_create)
-        if ok do return
-    }
-
-    cmd, ok = get_sub_node(tree.normal, keys.keys, allow_create)
 
     return
 }
 
 init_command_tree :: proc() {
-    tree.normal = create_node()
-    tree.ctrl = create_node()
-    tree.shift = create_node()
-    tree.ctrl_shift = create_node()
-    tree.ctrl_alt = create_node()
-    tree.ctrl_shift_alt = create_node()
+    for i in 0 ..< len(tree.roots) {
+        tree.roots[i] = create_node()
+    }
 }
 
 destroy_command_tree :: proc() {
-    delete_node(tree.normal)
-    delete_node(tree.ctrl)
-    delete_node(tree.shift)
-    delete_node(tree.ctrl_shift)
-    delete_node(tree.ctrl_alt)
-    delete_node(tree.ctrl_shift_alt)
+    for i in 0 ..< len(tree.roots) {
+        delete_node(tree.roots[i])
+    }
 }
 
 register_command :: proc(keys: KeySequence, command: Command) {

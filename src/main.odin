@@ -56,11 +56,6 @@ main :: proc() {
         assert(buffer_ok, "Failed to load test file")
         append(&state.buffers, b)
     }
-    
-    status_bar := status.StatusBar {
-        cb            = &state.command_buffer,
-        active_buffer = &state.buffers[0],
-    }
 
     window_dims := font.calculate_window_dims()
 
@@ -78,7 +73,7 @@ main :: proc() {
 
     state.portals[2] = {
         active = true,
-        contents = &status_bar,
+        contents = &state.status_bar,
         rect = {components = {0, window_dims.y - 1, window_dims.x, 1}},
     }
 

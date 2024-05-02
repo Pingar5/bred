@@ -3,26 +3,31 @@ package editor
 import "bred:buffer"
 import "bred:command"
 import "bred:portal"
+import "bred:status"
 
 import "core:log"
 import rl "vendor:raylib"
 
 EditorState :: struct {
     buffers:        [dynamic]buffer.Buffer,
+    status_bar:     status.StatusBar,
     command_buffer: command.CommandBuffer,
     portals:        [8]portal.Portal,
     active_portal:  int,
 }
 
-create :: proc(allocator := context.allocator) -> EditorState {
-    return {buffers = make([dynamic]buffer.Buffer, allocator = allocator)}
+create :: proc(allocator := context.allocator) -> (state: EditorState) {
+    state.buffers = make([dynamic]buffer.Buffer, allocator = allocator)
+    state.status_bar.cb = &state.command_buffer
+    
+    return
 }
 
 destroy :: proc(state: ^EditorState) {
     for b in state.buffers {
         buffer.destroy(b)
     }
-    
+
     delete(state.buffers)
 }
 
@@ -30,6 +35,7 @@ update :: proc(state: ^EditorState) {
     inputs := command.tick(&state.command_buffer)
 
     active_buffer := state.portals[state.active_portal].contents.(^buffer.Buffer)
+    state.status_bar.active_buffer = active_buffer
 
     for input in inputs {
         switch c in input {

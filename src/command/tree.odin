@@ -4,7 +4,6 @@ import "bred:buffer"
 
 import "core:fmt"
 import "core:log"
-import "core:strings"
 import rl "vendor:raylib"
 
 BufferCommand :: proc(buffer: ^buffer.Buffer)
@@ -83,8 +82,6 @@ get_sub_node :: proc(
 
 @(private)
 get_node :: proc(keys: KeySequence, allow_create := false) -> (cmd: ^CommandTreeNode, ok: bool) {
-    root: ^CommandTreeNode
-
     if keys.alt && keys.shift && keys.ctrl {
         cmd, ok = get_sub_node(tree.ctrl_shift_alt, keys.keys, allow_create)
         if ok do return

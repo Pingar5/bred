@@ -3,8 +3,7 @@ package logger
 import "core:fmt"
 import "core:runtime"
 
-LoggerData :: struct {
-}
+LoggerData :: struct {}
 
 create_logger :: proc(allocator := context.allocator) -> runtime.Logger {
     data := new(LoggerData)
@@ -19,7 +18,5 @@ log :: proc(
     options: runtime.Logger_Options,
     location := #caller_location,
 ) {
-    data := transmute(^LoggerData)data_ptr
-
     fmt.print(text)
 }

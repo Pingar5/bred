@@ -1,9 +1,7 @@
 package main
 
-import "core:fmt"
 import "core:log"
 import "core:mem"
-import "core:strings"
 
 import "bred:buffer"
 import "bred:colors"
@@ -40,7 +38,6 @@ main :: proc() {
 
     {     // Maximize the Window
         monitor := rl.GetCurrentMonitor()
-        monitor_size := [2]i32{rl.GetMonitorWidth(monitor), rl.GetMonitorHeight(monitor)}
         monitor_position := rl.GetMonitorPosition(monitor)
         rl.SetWindowPosition(i32(monitor_position.x), i32(monitor_position.y))
         rl.SetWindowState({.WINDOW_MAXIMIZED, .WINDOW_RESIZABLE})

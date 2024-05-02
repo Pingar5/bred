@@ -1,6 +1,5 @@
 package status_bar
 
-import "core:strings"
 import rl "vendor:raylib"
 
 import "bred:buffer"

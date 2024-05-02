@@ -1,13 +1,11 @@
 package buffer
 
-import "bred:font"
 import "bred:math"
 
 import "core:fmt"
 import "core:log"
 import "core:os"
 import "core:strings"
-import rl "vendor:raylib"
 
 Line :: struct {
     start, end: int,

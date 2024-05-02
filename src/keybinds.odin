@@ -27,7 +27,7 @@ register_keybinds :: proc() {
 
     {     // Control Mode
         command.register({ctrl = true, keys = {.H}}, buffer.move_cursor_left)
-        command.register({ctrl = true, keys = {.L}}, buffer.move_cursor_right);;
+        command.register({ctrl = true, keys = {.L}}, buffer.move_cursor_right)
         command.register({ctrl = true, keys = {.K}}, buffer.move_cursor_up)
         command.register({ctrl = true, keys = {.J}}, buffer.move_cursor_down)
 

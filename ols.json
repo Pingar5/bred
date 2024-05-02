@@ -4,6 +4,10 @@
 		{
 			"name": "bred",
 			"path": "F:\\Github\\editor\\src"
+		},
+		{
+			"name": "user",
+			"path": "F:\\Github\\editor\\user"
 		}
 	],
 	"enable_document_symbols": true,

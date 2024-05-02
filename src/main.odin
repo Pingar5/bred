@@ -8,6 +8,7 @@ import "bred:logger"
 import "bred:portal"
 import "bred:status"
 import "bred:editor"
+import "user:config"
 
 import "core:log"
 import "core:mem"
@@ -79,7 +80,8 @@ main :: proc() {
 
     command.init_command_tree()
     defer command.destroy_command_tree()
-    register_keybinds()
+    
+    config.init()
 
     for !(rl.WindowShouldClose()) {
         editor.update(state)

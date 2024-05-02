@@ -1,10 +1,10 @@
-package main
+package user
 
 import "bred:buffer"
 import "bred:command"
 import "bred:editor"
 
-register_keybinds :: proc() {
+init :: proc() {
     {     // Normal Mode
         command.register({{}, {.LEFT}}, buffer.move_cursor_left)
         command.register({{}, {.RIGHT}}, buffer.move_cursor_right)

@@ -24,13 +24,11 @@ Buffer :: struct {
     text:      string,
     cursor:    Cursor,
     lines:     [dynamic]Line,
-    font:      ^font.Font,
     scroll:    int,
 }
 
 load_file :: proc(
     file_name: string,
-    font: ^font.Font,
     allocator := context.allocator,
 ) -> (
     b: Buffer,
@@ -38,7 +36,7 @@ load_file :: proc(
 ) {
     buffer_data := os.read_entire_file(file_name, context.allocator) or_return
 
-    b = load_string(string(buffer_data), font, allocator)
+    b = load_string(string(buffer_data), allocator)
 
     b.file_path = file_name
 
@@ -47,7 +45,6 @@ load_file :: proc(
 
 load_string :: proc(
     text: string,
-    font: ^font.Font,
     allocator := context.allocator,
 ) -> (
     b: Buffer,
@@ -57,7 +54,6 @@ load_string :: proc(
 
     b.text = stripped_text
     b.lines = make([dynamic]Line, allocator)
-    b.font = font
 
     remap_lines(&b)
 

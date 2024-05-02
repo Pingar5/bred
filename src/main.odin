@@ -49,26 +49,24 @@ main :: proc() {
     font.init()
     defer font.quit()
 
-    f := font.load("CodeNewRomanNerdFontMono-Regular.otf")
-    defer font.unload(f)
+    font.load("CodeNewRomanNerdFontMono-Regular.otf")
 
-    b, buffer_ok := buffer.load_file("test.txt", f)
+    b, buffer_ok := buffer.load_file("test.txt")
     assert(buffer_ok, "Failed to load test file")
     defer buffer.destroy(b)
 
-    b2, buffer2_ok := buffer.load_file("test2.txt", f)
+    b2, buffer2_ok := buffer.load_file("test2.txt")
     assert(buffer2_ok, "Failed to load test file")
     defer buffer.destroy(b2)
 
     command_buffer := command.CommandBuffer{}
 
     status_bar := status.StatusBar {
-        font          = f,
         cb            = &command_buffer,
         active_buffer = &b,
     }
 
-    window_dims := font.calculate_window_dims(f)
+    window_dims := font.calculate_window_dims()
 
     portals[0] = {
         active = true,

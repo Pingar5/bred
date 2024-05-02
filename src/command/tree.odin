@@ -4,7 +4,7 @@ import "core:fmt"
 import "core:log"
 import rl "vendor:raylib"
 
-CommandProc :: proc(editor_state: ^EditorState) -> (ok: bool)
+CommandProc :: proc(editor_state: ^EditorState, motion: Motion) -> (ok: bool)
 
 CommandTreeNode :: struct {
     children: map[rl.KeyboardKey]^CommandTreeNode,
@@ -22,7 +22,8 @@ MODIFIER_SET_PRECEDENCE :: [8]Modifiers {
     {},
 }
 CommandTree :: struct {
-    roots: [8]^CommandTreeNode,
+    roots:           [8]^CommandTreeNode,
+    default_command: CommandProc,
 }
 
 @(private)
@@ -78,7 +79,7 @@ get_sub_node :: proc(
 }
 
 @(private)
-get_node :: proc(keys: KeySequence, allow_create := false) -> (cmd: ^CommandTreeNode, ok: bool) {
+get_node :: proc(keys: Motion, allow_create := false) -> (cmd: ^CommandTreeNode, ok: bool) {
     for modifiers in MODIFIER_SET_PRECEDENCE {
         if modifiers <= keys.modifiers {
             root := tree.roots[transmute(u8)(modifiers)]
@@ -103,7 +104,7 @@ destroy_command_tree :: proc() {
     }
 }
 
-register :: proc(keys: KeySequence, command: CommandProc) {
+register :: proc(keys: Motion, command: CommandProc) {
     node, ok := get_node(keys, true)
 
     assert(ok, "Failed to create command tree node")
@@ -112,7 +113,11 @@ register :: proc(keys: KeySequence, command: CommandProc) {
     node.command = command
 }
 
-is_leaf_or_invalid :: proc(keys: KeySequence) -> bool {
+set_default_command :: proc(command: CommandProc) {
+    tree.default_command = command
+}
+
+is_leaf_or_invalid :: proc(keys: Motion) -> bool {
     node, ok := get_node(keys)
 
     if !ok do return true
@@ -120,7 +125,7 @@ is_leaf_or_invalid :: proc(keys: KeySequence) -> bool {
     return len(node.children) == 0
 }
 
-get_command :: proc(keys: KeySequence) -> (command: CommandProc) {
+get_command :: proc(keys: Motion) -> (command: CommandProc) {
     node, node_found := get_node(keys)
 
     if node_found && node.command != nil {

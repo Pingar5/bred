@@ -37,15 +37,9 @@ update :: proc(state: ^EditorState) {
     active_buffer := state.portals[state.active_portal].contents
 
     for input in inputs {
-        switch c in input {
-        case byte:
-            buffer.insert_character(active_buffer, c)
-        case KeySequence:
-            cmd, command_exists := get_command(c)
-            if !command_exists do continue
+        command_proc := get_command(input)
 
-            cmd(state)
-        }
+        command_proc(state, input)
     }
 
     if rl.GetMouseWheelMove() != 0 {

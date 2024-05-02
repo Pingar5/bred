@@ -49,7 +49,7 @@ main :: proc() {
     font.load("CodeNewRomanNerdFontMono-Regular.otf")
     
     state := editor.create()
-    defer editor.destroy(&state)
+    defer editor.destroy(state)
 
     for file_path in ([]string{"test.txt", "test2.txt"}) {
         b, buffer_ok := buffer.load_file(file_path)
@@ -82,12 +82,12 @@ main :: proc() {
     register_keybinds()
 
     for !(rl.WindowShouldClose()) {
-        editor.update(&state)
+        editor.update(state)
         
         rl.BeginDrawing()
         rl.ClearBackground(colors.BACKGROUND)
 
-        editor.render(&state)
+        editor.render(state)
 
         rl.EndDrawing()
 

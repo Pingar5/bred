@@ -16,7 +16,9 @@ EditorState :: struct {
     active_portal:  int,
 }
 
-create :: proc(allocator := context.allocator) -> (state: EditorState) {
+create :: proc(allocator := context.allocator) -> (state: ^EditorState) {
+    state = new(EditorState, allocator)
+    
     state.buffers = make([dynamic]buffer.Buffer, allocator = allocator)
     state.status_bar.cb = &state.command_buffer
     
@@ -29,6 +31,7 @@ destroy :: proc(state: ^EditorState) {
     }
 
     delete(state.buffers)
+    free(state)
 }
 
 update :: proc(state: ^EditorState) {

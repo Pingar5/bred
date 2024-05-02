@@ -8,10 +8,12 @@ import rl "vendor:raylib"
 
 BufferCommand :: proc(buffer: ^buffer.Buffer)
 CommandBufferCommand :: proc(command_buffer: ^CommandBuffer)
+EditorCommand :: proc(editor_state: rawptr)
 
 Command :: union {
     BufferCommand,
     CommandBufferCommand,
+    EditorCommand,
 }
 
 CommandTreeNode :: struct {
@@ -101,7 +103,7 @@ get_node :: proc(keys: KeySequence, allow_create := false) -> (cmd: ^CommandTree
         cmd, ok = get_sub_node(tree.ctrl, keys.keys, allow_create)
         if ok do return
     }
-    
+
     if keys.shift {
         cmd, ok = get_sub_node(tree.shift, keys.keys, allow_create)
         if ok do return
@@ -147,9 +149,14 @@ register_command_buffer_command :: proc(keys: KeySequence, command: CommandBuffe
     register_command(keys, command)
 }
 
+register_editor_command :: proc(keys: KeySequence, command: EditorCommand) {
+    register_command(keys, command)
+}
+
 register :: proc {
     register_buffer_command,
     register_command_buffer_command,
+    register_editor_command,
 }
 
 is_leaf_or_invalid :: proc(keys: KeySequence) -> bool {

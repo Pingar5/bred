@@ -2,6 +2,7 @@ package main
 
 import "bred:buffer"
 import "bred:command"
+import "bred:editor"
 
 register_keybinds :: proc() {
     {     // Normal Mode
@@ -30,6 +31,9 @@ register_keybinds :: proc() {
         command.register({ctrl = true, keys = {.L}}, buffer.move_cursor_right)
         command.register({ctrl = true, keys = {.K}}, buffer.move_cursor_up)
         command.register({ctrl = true, keys = {.J}}, buffer.move_cursor_down)
+        
+        command.register({ctrl = true, keys = {.LEFT}}, command.EditorCommand(editor.previous_portal))
+        command.register({ctrl = true, keys = {.RIGHT}}, command.EditorCommand(editor.next_portal))
 
         command.register({ctrl = true, keys = {.D, .D}}, buffer.delete_line)
 

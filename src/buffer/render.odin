@@ -55,7 +55,7 @@ render_line :: proc(b: ^Buffer, screen_pos: math.Position, buffer_line, max_leng
 }
 
 @(private = "file")
-render_cursor :: proc(b: ^Buffer, rect: math.Rect) {
+render_cursor :: proc(b: ^Buffer, rect: math.Rect, is_active_buffer: bool) {
     line := b.lines[b.cursor.pos.y]
 
     column := min(b.cursor.pos.x, line.end - line.start)
@@ -64,18 +64,23 @@ render_cursor :: proc(b: ^Buffer, rect: math.Rect) {
     if column >= rect.width || portal_line >= rect.height || portal_line < 0 do return
 
     screen_pos := math.Position{column + rect.left + 4, portal_line + rect.top}
-    font.draw_bg_rect({vectors = {screen_pos, {1, 1}}}, rl.WHITE)
 
-    if b.cursor.pos.x < get_line_length(b, b.cursor.pos.y) {
-        font.write(
-            screen_pos,
-            b.text[line.start + b.cursor.pos.x:line.start + b.cursor.pos.x + 1],
-            rl.BLACK,
-        )
+    if is_active_buffer {
+        font.draw_bg_rect({vectors = {screen_pos, {1, 1}}}, rl.WHITE)
+
+        if b.cursor.pos.x < get_line_length(b, b.cursor.pos.y) {
+            font.write(
+                screen_pos,
+                b.text[line.start + b.cursor.pos.x:line.start + b.cursor.pos.x + 1],
+                rl.BLACK,
+            )
+        }
+    } else {
+        font.draw_cell_outline(screen_pos, rl.WHITE)
     }
 }
 
-render :: proc(b: ^Buffer, rect: math.Rect) {
+render :: proc(b: ^Buffer, rect: math.Rect, is_active_buffer: bool) {
     font.draw_bg_rect(
         {components = {rect.left, rect.top, 3, rect.height}},
         colors.GUTTER_BACKGROUND,
@@ -90,5 +95,5 @@ render :: proc(b: ^Buffer, rect: math.Rect) {
         render_line(b, {rect.left, screen_line}, buffer_line, rect.width)
     }
 
-    render_cursor(b, rect)
+    render_cursor(b, rect, is_active_buffer)
 }

@@ -1,8 +1,5 @@
 package main
 
-import "core:log"
-import "core:mem"
-
 import "bred:buffer"
 import "bred:colors"
 import "bred:command"
@@ -10,7 +7,10 @@ import "bred:font"
 import "bred:logger"
 import "bred:portal"
 import "bred:status"
+import "bred:editor"
 
+import "core:log"
+import "core:mem"
 import rl "vendor:raylib"
 
 tracking_allocator: mem.Tracking_Allocator
@@ -47,37 +47,37 @@ main :: proc() {
     defer font.quit()
 
     font.load("CodeNewRomanNerdFontMono-Regular.otf")
+    
+    state := editor.create()
+    defer editor.destroy(&state)
 
-    b, buffer_ok := buffer.load_file("test.txt")
-    assert(buffer_ok, "Failed to load test file")
-    defer buffer.destroy(b)
-
-    b2, buffer2_ok := buffer.load_file("test2.txt")
-    assert(buffer2_ok, "Failed to load test file")
-    defer buffer.destroy(b2)
-
-    command_buffer := command.CommandBuffer{}
+    for file_path in ([]string{"test.txt", "test2.txt"}) {
+        b, buffer_ok := buffer.load_file(file_path)
+        assert(buffer_ok, "Failed to load test file")
+        append(&state.buffers, b)
+    }
+    
 
     status_bar := status.StatusBar {
-        cb            = &command_buffer,
-        active_buffer = &b,
+        cb            = &state.command_buffer,
+        active_buffer = &state.buffers[0],
     }
 
     window_dims := font.calculate_window_dims()
 
-    portals[0] = {
+    state.portals[0] = {
         active = true,
-        contents = &b,
+        contents = &state.buffers[0],
         rect = {components = {0, 0, window_dims.x / 2, window_dims.y - 1}},
     }
 
-    portals[1] = {
+    state.portals[1] = {
         active = true,
-        contents = &b2,
+        contents = &state.buffers[1],
         rect = {components = {window_dims.x / 2, 0, window_dims.x / 2, window_dims.y - 1}},
     }
 
-    portals[2] = {
+    state.portals[2] = {
         active = true,
         contents = &status_bar,
         rect = {components = {0, window_dims.y - 1, window_dims.x, 1}},
@@ -88,46 +88,22 @@ main :: proc() {
     register_keybinds()
 
     for !(rl.WindowShouldClose()) {
+        editor.update(&state)
+        
         rl.BeginDrawing()
-
         rl.ClearBackground(colors.BACKGROUND)
 
-        inputs := command.tick(&command_buffer)
-
-        for input in inputs {
-            switch c in input {
-            case byte:
-                buffer.insert_character(&b, c)
-            case command.KeySequence:
-                cmd, command_exists := command.get_command(c)
-                if !command_exists do continue
-
-                switch cmd_proc in cmd {
-                case command.BufferCommand:
-                    cmd_proc(&b)
-                case command.CommandBufferCommand:
-                    cmd_proc(&command_buffer)
-                }
-            }
-        }
-
-        if rl.GetMouseWheelMove() != 0 {
-            b.scroll += rl.GetMouseWheelMove() > 0 ? -1 : 1
-            b.scroll = clamp(b.scroll, 0, len(b.lines) - 1)
-        }
-
-        for &p in portals {
-            if p.active {
-                portal.render(&p)
-            }
-        }
+        editor.render(&state)
 
         rl.EndDrawing()
 
         free_all(context.temp_allocator)
     }
 
-    buffer.save(b)
+    for b in state.buffers {
+        buffer.save(b)
+        buffer.destroy(b)
+    }
 }
 
 check_tracking_allocator :: proc() {

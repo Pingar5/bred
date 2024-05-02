@@ -2,7 +2,6 @@ package user
 
 import "bred:buffer"
 import "bred:command"
-import "bred:editor"
 
 init :: proc() {
     {     // Normal Mode
@@ -32,8 +31,8 @@ init :: proc() {
         command.register({{.Ctrl}, {.K}}, buffer.move_cursor_up)
         command.register({{.Ctrl}, {.J}}, buffer.move_cursor_down)
 
-        command.register({{.Ctrl}, {.LEFT}}, command.EditorCommand(editor.previous_portal))
-        command.register({{.Ctrl}, {.RIGHT}}, command.EditorCommand(editor.next_portal))
+        command.register({{.Ctrl}, {.LEFT}}, command.EditorCommand(command.previous_portal))
+        command.register({{.Ctrl}, {.RIGHT}}, command.EditorCommand(command.next_portal))
 
         command.register({{.Ctrl}, {.D, .D}}, buffer.delete_line)
 

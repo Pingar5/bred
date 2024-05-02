@@ -1,7 +1,6 @@
-package editor
+package command
 
 import "bred:buffer"
-import "bred:command"
 import "bred:portal"
 import "bred:status"
 
@@ -10,18 +9,16 @@ import rl "vendor:raylib"
 
 EditorState :: struct {
     buffers:        [dynamic]buffer.Buffer,
-    status_bar:     status.StatusBar,
-    command_buffer: command.CommandBuffer,
+    command_buffer: CommandBuffer,
     portals:        [8]portal.Portal,
     active_portal:  int,
 }
 
 create :: proc(allocator := context.allocator) -> (state: ^EditorState) {
     state = new(EditorState, allocator)
-    
+
     state.buffers = make([dynamic]buffer.Buffer, allocator = allocator)
-    state.status_bar.cb = &state.command_buffer
-    
+
     return
 }
 
@@ -35,25 +32,24 @@ destroy :: proc(state: ^EditorState) {
 }
 
 update :: proc(state: ^EditorState) {
-    inputs := command.tick(&state.command_buffer)
+    inputs := tick(&state.command_buffer)
 
-    active_buffer := state.portals[state.active_portal].contents.(^buffer.Buffer)
-    state.status_bar.active_buffer = active_buffer
+    active_buffer := state.portals[state.active_portal].contents
 
     for input in inputs {
         switch c in input {
         case byte:
             buffer.insert_character(active_buffer, c)
-        case command.KeySequence:
-            cmd, command_exists := command.get_command(c)
+        case KeySequence:
+            cmd, command_exists := get_command(c)
             if !command_exists do continue
 
             switch cmd_proc in cmd {
-            case command.BufferCommand:
+            case BufferCommand:
                 cmd_proc(active_buffer)
-            case command.CommandBufferCommand:
+            case CommandBufferCommand:
                 cmd_proc(&state.command_buffer)
-            case command.EditorCommand:
+            case EditorCommand:
                 cmd_proc(state)
             }
         }
@@ -77,12 +73,9 @@ next_portal :: proc(state: ^EditorState) {
     state.active_portal += 1
     state.active_portal %= len(state.portals)
 
-    _, portal_has_buffer := state.portals[state.active_portal].contents.(^buffer.Buffer)
-    for !state.portals[state.active_portal].active || !portal_has_buffer {
+    for !state.portals[state.active_portal].active {
         state.active_portal += 1
         state.active_portal %= len(state.portals)
-
-        _, portal_has_buffer = state.portals[state.active_portal].contents.(^buffer.Buffer)
     }
 }
 
@@ -90,11 +83,8 @@ previous_portal :: proc(state: ^EditorState) {
     state.active_portal += len(state.portals) - 1
     state.active_portal %= len(state.portals)
 
-    _, portal_has_buffer := state.portals[state.active_portal].contents.(^buffer.Buffer)
-    for !state.portals[state.active_portal].active || !portal_has_buffer {
+    for !state.portals[state.active_portal].active {
         state.active_portal += len(state.portals) - 1
         state.active_portal %= len(state.portals)
-
-        _, portal_has_buffer = state.portals[state.active_portal].contents.(^buffer.Buffer)
     }
 }

@@ -5,7 +5,6 @@ import "bred:colors"
 import "bred:command"
 import "bred:font"
 import "bred:logger"
-import "bred:editor"
 import "user:config"
 
 import "core:log"
@@ -45,8 +44,8 @@ main :: proc() {
 
     font.load("CodeNewRomanNerdFontMono-Regular.otf")
     
-    state := editor.create()
-    defer editor.destroy(state)
+    state := command.create()
+    defer command.destroy(state)
 
     for file_path in ([]string{"test.txt", "test2.txt"}) {
         b, buffer_ok := buffer.load_file(file_path)
@@ -68,24 +67,18 @@ main :: proc() {
         rect = {components = {window_dims.x / 2, 0, window_dims.x / 2, window_dims.y - 1}},
     }
 
-    state.portals[2] = {
-        active = true,
-        contents = &state.status_bar,
-        rect = {components = {0, window_dims.y - 1, window_dims.x, 1}},
-    }
-
     command.init_command_tree()
     defer command.destroy_command_tree()
     
     config.init()
 
     for !(rl.WindowShouldClose()) {
-        editor.update(state)
+        command.update(state)
         
         rl.BeginDrawing()
         rl.ClearBackground(colors.BACKGROUND)
 
-        editor.render(state)
+        command.render(state)
 
         rl.EndDrawing()
 

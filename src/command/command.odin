@@ -5,7 +5,7 @@ import "core:slice"
 import rl "vendor:raylib"
 
 MOD_HOLD_MINIMUM :: 0.15
-COMMAND_TIMEOUT :: 0.2
+COMMAND_TIMEOUT :: 0.5
 
 ModifierState :: struct {
     enabled, locked: bool,

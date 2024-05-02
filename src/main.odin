@@ -88,7 +88,7 @@ main :: proc() {
             b.scroll = clamp(b.scroll, 0, len(b.lines) - 1)
         }
 
-        buffer.render(b)
+        buffer.render(b, {components = {3, 0, 20, 5}})
         status.render(f, command_buffer, b)
 
         rl.EndDrawing()

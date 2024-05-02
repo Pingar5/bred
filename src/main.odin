@@ -57,7 +57,6 @@ main :: proc() {
         append(&state.buffers, b)
     }
     
-
     status_bar := status.StatusBar {
         cb            = &state.command_buffer,
         active_buffer = &state.buffers[0],
@@ -102,7 +101,6 @@ main :: proc() {
 
     for b in state.buffers {
         buffer.save(b)
-        buffer.destroy(b)
     }
 }
 

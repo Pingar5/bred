@@ -19,6 +19,10 @@ create :: proc(allocator := context.allocator) -> EditorState {
 }
 
 destroy :: proc(state: ^EditorState) {
+    for b in state.buffers {
+        buffer.destroy(b)
+    }
+    
     delete(state.buffers)
 }
 

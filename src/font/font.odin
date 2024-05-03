@@ -1,6 +1,6 @@
 package font
 
-import "bred:math"
+import "bred:core"
 
 import rl "vendor:raylib"
 
@@ -11,7 +11,6 @@ Font :: struct {
     character_size: [2]i32,
     size:           f32,
 }
-
 ACTIVE_FONT: Font
 
 init :: proc() {
@@ -24,7 +23,7 @@ quit :: proc() {
 
 load :: proc(file_name: cstring) {
     if ACTIVE_FONT != {} do unload()
-    
+
     ACTIVE_FONT.font = rl.LoadFontEx(
         file_name,
         FONT_SIZE,
@@ -41,7 +40,12 @@ unload :: proc() {
     rl.UnloadFont(ACTIVE_FONT.font)
 }
 
-calculate_window_dims :: proc() -> math.Position {
+calculate_window_dims :: proc() -> core.Position {
     screen_width, screen_height := rl.GetScreenWidth(), rl.GetScreenHeight()
-    return {int(screen_width / ACTIVE_FONT.character_size.x), int(screen_height / ACTIVE_FONT.character_size.y)}
+    return(
+         {
+            int(screen_width / ACTIVE_FONT.character_size.x),
+            int(screen_height / ACTIVE_FONT.character_size.y),
+        } \
+    )
 }

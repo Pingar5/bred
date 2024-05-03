@@ -2,12 +2,15 @@ package builtin_commands
 
 import "core:log"
 
-import "bred:buffer"
-import "bred:command"
+import "bred:core"
+import "bred:core/buffer"
 
-EditorState :: command.EditorState
-WildcardValue :: command.WildcardValue
-Buffer :: buffer.Buffer
+@(private)
+EditorState :: core.EditorState
+@(private)
+WildcardValue :: core.WildcardValue
+@(private)
+Buffer :: core.Buffer
 
 @(private)
 get_active_buffer :: proc(state: ^EditorState) -> ^Buffer {

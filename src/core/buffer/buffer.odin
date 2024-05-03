@@ -1,29 +1,15 @@
 package buffer
 
-import "bred:math"
+import "bred:core"
 
 import "core:fmt"
 import "core:log"
 import "core:os"
 import "core:strings"
 
-Line :: struct {
-    start, end: int,
-}
-
-Cursor :: struct {
-    index:          int,
-    pos:            math.Position,
-    virtual_column: int,
-}
-
-Buffer :: struct {
-    file_path: string,
-    text:      string,
-    cursor:    Cursor,
-    lines:     [dynamic]Line,
-    scroll:    int,
-}
+@(private) Line :: core.Line
+@(private) Cursor :: core.Cursor
+@(private) Buffer :: core.Buffer
 
 load_file :: proc(file_name: string, allocator := context.allocator) -> (b: Buffer, ok: bool) {
     buffer_data := os.read_entire_file(file_name, context.allocator) or_return
@@ -61,7 +47,7 @@ save :: proc(b: Buffer) -> bool {
     return ok
 }
 
-insert_character :: proc(b: ^Buffer, r: byte, at: math.Position) {
+insert_character :: proc(b: ^Buffer, r: byte, at: core.Position) {
     index := pos_to_index(b, at)
 
     update_text(b, fmt.aprint(b.text[:index], rune(r), b.text[index:], sep = ""))
@@ -69,7 +55,7 @@ insert_character :: proc(b: ^Buffer, r: byte, at: math.Position) {
     if index <= b.cursor.index do move_cursor_horizontal(b, 1)
 }
 
-insert_string :: proc(b: ^Buffer, str: string, at: math.Position) {
+insert_string :: proc(b: ^Buffer, str: string, at: core.Position) {
     index := pos_to_index(b, at)
 
     update_text(b, fmt.aprint(b.text[:index], str, b.text[index:], sep = ""))
@@ -88,7 +74,7 @@ match_indent :: proc(b: ^Buffer, src_line, dest_line: int) {
     }
 }
 
-delete_range_position :: proc(b: ^Buffer, start, end: math.Position) {
+delete_range_position :: proc(b: ^Buffer, start, end: core.Position) {
     start_index := pos_to_index(b, start)
     end_index := pos_to_index(b, end)
 
@@ -111,22 +97,17 @@ delete_range :: proc {
     delete_range_position,
 }
 
-destroy :: proc(b: Buffer) {
-    delete(b.text)
-    delete(b.lines)
-}
-
 get_line_length :: proc(b: ^Buffer, line_idx: int) -> int {
     line_bounds := b.lines[line_idx]
     return line_bounds.end - line_bounds.start
 }
 
-pos_to_index :: proc(b: ^Buffer, pos: math.Position) -> int {
+pos_to_index :: proc(b: ^Buffer, pos: core.Position) -> int {
     line_bounds := b.lines[pos.y]
     return line_bounds.start + pos.x
 }
 
-index_to_pos :: proc(b: ^Buffer, index: int) -> math.Position {
+index_to_pos :: proc(b: ^Buffer, index: int) -> core.Position {
     assert(index < len(b.text) && index >= 0, "Invalid index")
 
     for line, line_index in b.lines {

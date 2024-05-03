@@ -1,43 +1,30 @@
-package command
-
-import "bred:buffer"
-import "bred:portal"
-import "bred:status"
+package editor
 
 import "core:log"
 import rl "vendor:raylib"
 
-EditorState :: struct {
-    buffers:        [dynamic]buffer.Buffer,
-    command_buffer: CommandBuffer,
-    portals:        [8]portal.Portal,
-    active_portal:  int,
-}
+import "bred:core"
+import "bred:core/command"
+import "bred:core/motion"
+import "bred:core/portal"
+
+@(private) EditorState :: core.EditorState
 
 create :: proc(allocator := context.allocator) -> (state: ^EditorState) {
     state = new(EditorState, allocator)
 
-    state.buffers = make([dynamic]buffer.Buffer, allocator = allocator)
+    state.buffers = make([dynamic]core.Buffer, allocator = allocator)
 
     return
 }
 
-destroy :: proc(state: ^EditorState) {
-    for b in state.buffers {
-        buffer.destroy(b)
-    }
-
-    delete(state.buffers)
-    free(state)
-}
-
 update :: proc(state: ^EditorState) {
-    inputs := tick(&state.command_buffer)
+    inputs := motion.tick(&state.command_buffer)
 
     active_buffer := state.portals[state.active_portal].contents
 
     for input in inputs {
-        command_proc, wildcards, command_exists := get_command(input)
+        command_proc, wildcards, command_exists := command.get_command(input)
 
         if command_exists do command_proc(state, wildcards)
     }

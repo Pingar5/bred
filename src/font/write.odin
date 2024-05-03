@@ -1,11 +1,11 @@
 package font
 
-import "bred:math"
+import "bred:core"
 
 import "core:strings"
 import rl "vendor:raylib"
 
-write :: proc(pos: math.Position, text: string, color: rl.Color) -> (ending_column: int) {
+write :: proc(pos: core.Position, text: string, color: rl.Color) -> (ending_column: int) {
     c_text := strings.clone_to_cstring(text, context.temp_allocator)
     rl.DrawTextEx(
         ACTIVE_FONT.font,
@@ -22,7 +22,7 @@ write :: proc(pos: math.Position, text: string, color: rl.Color) -> (ending_colu
     return pos.x + strings.rune_count(text)
 }
 
-draw_bg_rect :: proc(rect: math.Rect, color: rl.Color) {
+draw_bg_rect :: proc(rect: core.Rect, color: rl.Color) {
     rl.DrawRectangle(
         ACTIVE_FONT.character_size.x * i32(rect.left),
         ACTIVE_FONT.character_size.y * i32(rect.top),
@@ -32,7 +32,7 @@ draw_bg_rect :: proc(rect: math.Rect, color: rl.Color) {
     )
 }
 
-draw_cell_outline :: proc(pos: math.Position, color: rl.Color) {
+draw_cell_outline :: proc(pos: core.Position, color: rl.Color) {
     rl.DrawRectangleLines(
         ACTIVE_FONT.character_size.x * i32(pos.x),
         ACTIVE_FONT.character_size.y * i32(pos.y),

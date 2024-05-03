@@ -1,38 +1,19 @@
-package command
+package motion
 
 import "core:log"
 import "core:slice"
 import rl "vendor:raylib"
 
+import "bred:core"
+import "bred:core/command"
+
+@(private) CommandBuffer :: core.CommandBuffer
+@(private) Motion :: core.Motion
+@(private) ModifierState :: core.ModifierState
+@(private) Modifiers :: core.Modifiers
+
 MOD_HOLD_MINIMUM :: 0.15
 COMMAND_TIMEOUT :: 0.5
-
-ModifierState :: struct {
-    enabled, locked: bool,
-    held:            bool,
-    held_for:        f32,
-}
-
-Modifier :: enum {
-    Ctrl,
-    Shift,
-    Alt,
-}
-Modifiers :: bit_set[Modifier;u8]
-
-Motion :: struct {
-    modifiers: Modifiers,
-    keys:      []rl.KeyboardKey,
-    chars:     []byte,
-}
-
-CommandBuffer :: struct {
-    ctrl, shift, alt: ModifierState,
-    keys_length:      uint,
-    keys:             [8]rl.KeyboardKey,
-    chars:            [8]byte,
-    timer:            f32,
-}
 
 SKIP_KEYS :: []rl.KeyboardKey {
     .RIGHT_CONTROL,
@@ -77,7 +58,7 @@ tick :: proc(cb: ^CommandBuffer) -> []Motion {
 
         keys := Motion{modifiers, cb.keys[:cb.keys_length], cb.chars[:cb.keys_length]}
 
-        if (is_leaf_or_invalid(keys) ||
+        if (command.is_leaf_or_invalid(keys) ||
                cb.timer > COMMAND_TIMEOUT ||
                cb.keys_length == len(cb.keys)) {
             append(&inputs, keys)

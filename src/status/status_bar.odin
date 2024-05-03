@@ -6,7 +6,7 @@ package status_bar
 // import "bred:colors"
 // import "bred:command"
 // import "bred:font"
-// import "bred:math"
+// import "bred:core"
 // import "bred:util"
 
 // StatusBar :: struct {
@@ -31,7 +31,7 @@ package status_bar
 //     column^ = font.write({column^, line}, mod_str, fg)
 // }
 
-// render :: proc(sb: ^StatusBar, rect: math.Rect) {
+// render :: proc(sb: ^StatusBar, rect: core.Rect) {
 //     font.draw_bg_rect(rect, colors.STATUS_BAR_BACKGROUND)
 
 //     column: int = 0

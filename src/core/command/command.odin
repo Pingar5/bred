@@ -1,34 +1,33 @@
 package command
 
+import "bred:core"
+
 import "core:fmt"
 import "core:log"
 import rl "vendor:raylib"
 
-CommandProc :: proc(editor_state: ^EditorState, wildcards: []WildcardValue)
+@(private) CommandProc :: core.CommandProc
+@(private) Modifiers :: core.Modifiers
+@(private) Wildcard :: core.Wildcard
+@(private) WildcardValue :: core.WildcardValue
+@(private) Motion :: core.Motion
 
-Wildcard :: enum {
-    Num,
-    Char,
-}
-
-WildcardValue :: union {
-    int,
-    byte,
-}
-
-CommandKey :: union {
-    Wildcard,
+@(private)
+PathStep :: union {
+    core.Wildcard,
     rl.KeyboardKey,
 }
 
+@(private)
 CommandTreeNode :: struct {
     children:      map[rl.KeyboardKey]^CommandTreeNode,
     num_wildcard:  ^CommandTreeNode,
     char_wildcard: ^CommandTreeNode,
     command:       CommandProc,
-    path:          []CommandKey,
+    path:          []PathStep,
 }
 
+@(private)
 MODIFIER_SET_PRECEDENCE :: [8]Modifiers {
     {.Ctrl, .Shift, .Alt},
     {.Ctrl, .Shift},
@@ -39,6 +38,8 @@ MODIFIER_SET_PRECEDENCE :: [8]Modifiers {
     {.Alt},
     {},
 }
+
+@(private)
 CommandTree :: struct {
     roots:           [8]^CommandTreeNode,
     default_command: CommandProc,
@@ -114,7 +115,7 @@ get_existing_node :: proc(
 }
 
 @(private)
-add_node_at :: proc(current: ^CommandTreeNode, path: []CommandKey) -> ^CommandTreeNode {
+add_node_at :: proc(current: ^CommandTreeNode, path: []PathStep) -> ^CommandTreeNode {
     if len(path) == 0 do return current
 
     switch step in path[0] {
@@ -154,7 +155,7 @@ destroy_command_tree :: proc() {
 
 register :: proc(
     modifiers: Modifiers,
-    path: []CommandKey,
+    path: []PathStep,
     command: CommandProc,
     allocator := context.allocator,
 ) {
@@ -167,7 +168,7 @@ register :: proc(
 
     node.command = command
 
-    node.path = make([]CommandKey, len(path), allocator)
+    node.path = make([]PathStep, len(path), allocator)
     copy(node.path, path)
 }
 
@@ -229,7 +230,7 @@ get_command :: proc(
 
 parse_wildcards :: proc(
     motion: Motion,
-    path: []CommandKey,
+    path: []PathStep,
     allocator := context.temp_allocator,
 ) -> []WildcardValue {
     values := make([dynamic]WildcardValue, allocator)

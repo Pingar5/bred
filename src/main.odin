@@ -1,8 +1,10 @@
 package main
 
-import "bred:buffer"
 import "bred:colors"
-import "bred:command"
+import "bred:core"
+import "bred:core/buffer"
+import "bred:core/command"
+import "bred:core/editor"
 import "bred:font"
 import "bred:logger"
 import "user:config"
@@ -43,9 +45,9 @@ main :: proc() {
     defer font.quit()
 
     font.load("CodeNewRomanNerdFontMono-Regular.otf")
-    
-    state := command.create()
-    defer command.destroy(state)
+
+    state := editor.create()
+    defer core.destroy(state)
 
     for file_path in ([]string{"test.txt", "test2.txt"}) {
         b, buffer_ok := buffer.load_file(file_path)
@@ -69,16 +71,16 @@ main :: proc() {
 
     command.init_command_tree()
     defer command.destroy_command_tree()
-    
+
     config.init()
 
     for !(rl.WindowShouldClose()) {
-        command.update(state)
-        
+        editor.update(state)
+
         rl.BeginDrawing()
         rl.ClearBackground(colors.BACKGROUND)
 
-        command.render(state)
+        editor.render(state)
 
         rl.EndDrawing()
 

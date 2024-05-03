@@ -2,7 +2,7 @@ package buffer
 
 import "core:log"
 
-import "bred:math"
+import "bred:core"
 
 LOOK_AHEAD_DISTANCE :: 15
 
@@ -28,7 +28,7 @@ set_cursor_index :: proc(b: ^Buffer, new_index: int) {
     b.cursor.pos = index_to_pos(b, b.cursor.index)
 }
 
-set_cursor_pos :: proc(b: ^Buffer, new_pos: math.Position) {
+set_cursor_pos :: proc(b: ^Buffer, new_pos: core.Position) {
     b.cursor.pos.y = clamp(new_pos.y, 0, len(b.lines))
     b.cursor.pos.x = clamp(new_pos.x, 0, get_line_length(b, b.cursor.pos.y))
 

@@ -4,7 +4,7 @@ import "bred:builtin/commands"
 import "bred:core/command"
 
 init :: proc() {
-    command.set_default_command(commands.insert_character)
+    command.register_default_command(commands.insert_character)
 
     // Normal
     command.register({}, {.LEFT}, commands.move_cursor_left)
@@ -23,7 +23,7 @@ init :: proc() {
     command.register({}, {.PAGE_UP}, commands.page_up)
     command.register({}, {.PAGE_DOWN}, commands.page_down)
 
-    command.register({}, {.ESCAPE}, commands.clear_modifiers)
+    command.register({}, {.ESCAPE}, commands.clear_modifiers, {requires_buffer = false})
 
     // Control
     command.register({.Ctrl}, {.F, .Char}, commands.jump_to_character)
@@ -45,7 +45,7 @@ init :: proc() {
     command.register({.Ctrl}, {.D, .Num, .D}, commands.delete_lines_below)
     command.register({.Ctrl, .Shift}, {.D, .Num, .D}, commands.delete_lines_above)
 
-    command.register({.Ctrl}, {.LEFT}, commands.previous_portal)
-    command.register({.Ctrl}, {.RIGHT}, commands.next_portal)
+    command.register({.Ctrl}, {.LEFT}, commands.previous_portal, {requires_buffer = false})
+    command.register({.Ctrl}, {.RIGHT}, commands.next_portal, {requires_buffer = false})
 
 }

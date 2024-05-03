@@ -74,6 +74,9 @@ WildcardValue :: union {
     byte,
 }
 
+CommandConstraints :: struct {
+    requires_buffer: bool,
+}
 
 ////////////////////
 //     MOTIONS    //

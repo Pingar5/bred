@@ -13,9 +13,11 @@ WildcardValue :: core.WildcardValue
 Buffer :: core.Buffer
 
 @(private)
-get_active_buffer :: proc(state: ^EditorState) -> ^Buffer {
+get_active_buffer :: proc(state: ^EditorState, loc := #caller_location) -> ^Buffer {
     portal := &state.portals[state.active_portal]
 
+    assert(portal.buffer != nil, "Buffer command run against non-buffer portal", loc)
+    
     return portal.buffer
 }
 

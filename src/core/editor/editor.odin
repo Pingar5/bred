@@ -8,7 +8,8 @@ import "bred:core/command"
 import "bred:core/motion"
 import "bred:core/portal"
 
-@(private) EditorState :: core.EditorState
+@(private)
+EditorState :: core.EditorState
 
 create :: proc(allocator := context.allocator) -> (state: ^EditorState) {
     state = new(EditorState, allocator)
@@ -19,12 +20,18 @@ create :: proc(allocator := context.allocator) -> (state: ^EditorState) {
 }
 
 update :: proc(state: ^EditorState) {
-    inputs := motion.tick(&state.command_buffer)
+    motions := motion.tick(&state.command_buffer)
 
-    for input in inputs {
-        command_proc, wildcards, command_exists := command.get_command(input)
+    active_portal := state.portals[state.active_portal]
 
-        if command_exists do command_proc(state, wildcards)
+    for motion in motions {
+        listings := command.get_commands(motion)
+
+        for listing in listings {
+            if listing.constraints.requires_buffer && active_portal.buffer == nil do continue
+
+            listing.procedure(state, command.parse_wildcards(motion, listing.path))
+        }
     }
 
     // if rl.GetMouseWheelMove() != 0 {

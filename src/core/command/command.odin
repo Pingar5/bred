@@ -4,13 +4,25 @@ import "bred:core"
 
 import "core:fmt"
 import "core:log"
+import "core:slice"
 import rl "vendor:raylib"
 
-@(private) CommandProc :: core.CommandProc
-@(private) Modifiers :: core.Modifiers
-@(private) Wildcard :: core.Wildcard
-@(private) WildcardValue :: core.WildcardValue
-@(private) Motion :: core.Motion
+@(private)
+CommandProc :: core.CommandProc
+@(private)
+Modifiers :: core.Modifiers
+@(private)
+Wildcard :: core.Wildcard
+@(private)
+WildcardValue :: core.WildcardValue
+@(private)
+Motion :: core.Motion
+@(private)
+CommandConstraints :: core.CommandConstraints
+
+DEFAULT_COMMAND_CONSTRAINTS :: CommandConstraints {
+    requires_buffer = true,
+}
 
 @(private)
 PathStep :: union {
@@ -23,8 +35,14 @@ CommandTreeNode :: struct {
     children:      map[rl.KeyboardKey]^CommandTreeNode,
     num_wildcard:  ^CommandTreeNode,
     char_wildcard: ^CommandTreeNode,
-    command:       CommandProc,
-    path:          []PathStep,
+    commands:      [dynamic]CommandListing,
+}
+
+@(private)
+CommandListing :: struct {
+    procedure:   CommandProc,
+    constraints: CommandConstraints,
+    path:        []PathStep,
 }
 
 @(private)
@@ -41,8 +59,8 @@ MODIFIER_SET_PRECEDENCE :: [8]Modifiers {
 
 @(private)
 CommandTree :: struct {
-    roots:           [8]^CommandTreeNode,
-    default_command: CommandProc,
+    roots:            [8]^CommandTreeNode,
+    default_commands: [dynamic]CommandListing,
 }
 
 @(private)
@@ -53,6 +71,7 @@ create_node :: proc() -> (node: ^CommandTreeNode) {
     node = new(CommandTreeNode)
 
     node.children = make(map[rl.KeyboardKey]^CommandTreeNode)
+    node.commands = make([dynamic]CommandListing)
 
     return
 }
@@ -65,9 +84,13 @@ delete_node :: proc(node: ^CommandTreeNode) {
 
     if node.char_wildcard != nil do delete_node(node.char_wildcard)
     if node.num_wildcard != nil do delete_node(node.num_wildcard)
+    
+    for listing in node.commands {
+        delete(listing.path)
+    }
 
+    delete(node.commands)
     delete(node.children)
-    delete(node.path)
     free(node)
 }
 
@@ -157,23 +180,19 @@ register :: proc(
     modifiers: Modifiers,
     path: []PathStep,
     command: CommandProc,
+    constraints := DEFAULT_COMMAND_CONSTRAINTS,
     allocator := context.allocator,
 ) {
     node := add_node_at(tree.roots[transmute(u8)(modifiers)], path)
 
-    assert(
-        node.command == nil,
-        fmt.tprintf("Command already exists at path: %#v with modifiers: %#v", path, modifiers),
-    )
-
-    node.command = command
-
-    node.path = make([]PathStep, len(path), allocator)
-    copy(node.path, path)
+    append(&node.commands, CommandListing{command, constraints, slice.clone(path, allocator)})
 }
 
-set_default_command :: proc(command: CommandProc) {
-    tree.default_command = command
+register_default_command :: proc(
+    command: CommandProc,
+    constraints := DEFAULT_COMMAND_CONSTRAINTS,
+) {
+    append(&tree.default_commands, CommandListing{command, constraints, nil})
 }
 
 is_leaf_or_invalid :: proc(keys: Motion) -> bool {
@@ -196,13 +215,11 @@ is_leaf_or_invalid :: proc(keys: Motion) -> bool {
     return true
 }
 
-get_command :: proc(
+get_commands :: proc(
     motion: Motion,
     allocator := context.temp_allocator,
 ) -> (
-    command: CommandProc,
-    wildcards: []WildcardValue,
-    motion_has_command: bool,
+    commands: []CommandListing,
 ) {
     for modifiers in MODIFIER_SET_PRECEDENCE {
         if modifiers <= motion.modifiers {
@@ -211,21 +228,12 @@ get_command :: proc(
             node, node_found := get_existing_node(root, motion.keys)
 
             if node_found {
-                if node.command != nil {
-                    return node.command, parse_wildcards(motion, node.path, allocator), true
-                } else {
-                    return nil, nil, false
-                }
+                return node.commands[:]
             }
         }
     }
 
-    wildcard_values := make([dynamic]WildcardValue, allocator)
-    for char in motion.chars {
-        append(&wildcard_values, byte(char))
-    }
-
-    return tree.default_command, wildcard_values[:], true
+    return tree.default_commands[:]
 }
 
 parse_wildcards :: proc(
@@ -235,35 +243,41 @@ parse_wildcards :: proc(
 ) -> []WildcardValue {
     values := make([dynamic]WildcardValue, allocator)
 
-    motion_key: int
-    for path_key, path_index in path {
-        wildcard, is_wildcard := path_key.(Wildcard)
-
-        if !is_wildcard {
-            motion_key += 1
-            continue
+    if path == nil {
+        for char in motion.chars {
+            append(&values, byte(char))
         }
+    } else {
+        motion_key: int
+        for path_key, path_index in path {
+            wildcard, is_wildcard := path_key.(Wildcard)
 
-        switch wildcard {
-        case .Char:
-            append(&values, motion.chars[motion_key])
-        case .Num:
-            num: int = 0
-
-            key := motion.keys[motion_key]
-            for key_is_number(key) {
-                num *= 10
-
-                if key >= .KP_0 {
-                    num += int(key) - int(rl.KeyboardKey.KP_0)
-                } else {
-                    num += int(key) - int(rl.KeyboardKey.ZERO)
-                }
-
+            if !is_wildcard {
                 motion_key += 1
-                key = motion.keys[motion_key]
+                continue
             }
-            append(&values, num)
+
+            switch wildcard {
+            case .Char:
+                append(&values, motion.chars[motion_key])
+            case .Num:
+                num: int = 0
+
+                key := motion.keys[motion_key]
+                for key_is_number(key) {
+                    num *= 10
+
+                    if key >= .KP_0 {
+                        num += int(key) - int(rl.KeyboardKey.KP_0)
+                    } else {
+                        num += int(key) - int(rl.KeyboardKey.ZERO)
+                    }
+
+                    motion_key += 1
+                    key = motion.keys[motion_key]
+                }
+                append(&values, num)
+            }
         }
     }
 

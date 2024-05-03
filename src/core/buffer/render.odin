@@ -84,7 +84,6 @@ render_cursor :: proc(b: ^Buffer, rect: core.Rect, is_active_buffer: bool) {
     screen_pos := core.Position{column + rect.left + 4, portal_line + rect.top}
 
     if is_active_buffer {
-        font.draw_bg_rect({vectors = {screen_pos, {1, 1}}}, rl.WHITE)
         when ODIN_DEBUG {
             index_pos := index_to_pos(b, b.cursor.index)
             index_screen_pos := index_pos + {rect.left + 4, -b.scroll}
@@ -96,6 +95,7 @@ render_cursor :: proc(b: ^Buffer, rect: core.Rect, is_active_buffer: bool) {
                 rl.RED,
             )
         }
+        font.draw_bg_rect({vectors = {screen_pos, {1, 1}}}, rl.WHITE)
 
         if b.cursor.pos.x < get_line_length(b, b.cursor.pos.y) {
             font.write(

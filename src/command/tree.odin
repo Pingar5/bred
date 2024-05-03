@@ -4,7 +4,7 @@ import "core:fmt"
 import "core:log"
 import rl "vendor:raylib"
 
-CommandProc :: proc(editor_state: ^EditorState, wildcards: []WildcardValue) -> (ok: bool)
+CommandProc :: proc(editor_state: ^EditorState, wildcards: []WildcardValue)
 
 Wildcard :: enum {
     Num,
@@ -260,6 +260,7 @@ parse_wildcards :: proc(
                 }
 
                 motion_key += 1
+                key = motion.keys[motion_key]
             }
             append(&values, num)
         }

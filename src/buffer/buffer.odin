@@ -25,13 +25,7 @@ Buffer :: struct {
     scroll:    int,
 }
 
-load_file :: proc(
-    file_name: string,
-    allocator := context.allocator,
-) -> (
-    b: Buffer,
-    ok: bool,
-) {
+load_file :: proc(file_name: string, allocator := context.allocator) -> (b: Buffer, ok: bool) {
     buffer_data := os.read_entire_file(file_name, context.allocator) or_return
 
     b = load_string(string(buffer_data), allocator)
@@ -41,12 +35,7 @@ load_file :: proc(
     return b, true
 }
 
-load_string :: proc(
-    text: string,
-    allocator := context.allocator,
-) -> (
-    b: Buffer,
-) {
+load_string :: proc(text: string, allocator := context.allocator) -> (b: Buffer) {
     stripped_text, was_alloc := strings.replace_all(text, "\r", "", context.allocator)
     if was_alloc do delete(text)
 
@@ -72,74 +61,54 @@ save :: proc(b: Buffer) -> bool {
     return ok
 }
 
-insert_character :: proc(b: ^Buffer, r: byte) {
-    update_text(b, fmt.aprint(b.text[:b.cursor.index], rune(r), b.text[b.cursor.index:], sep = ""))
-    move_cursor_right(b)
+insert_character :: proc(b: ^Buffer, r: byte, at: math.Position) {
+    index := pos_to_index(b, at)
+
+    update_text(b, fmt.aprint(b.text[:index], rune(r), b.text[index:], sep = ""))
+
+    if index <= b.cursor.index do move_cursor_horizontal(b, 1)
 }
 
-insert_string :: proc(b: ^Buffer, str: string) {
-    update_text(b, fmt.aprint(b.text[:b.cursor.index], str, b.text[b.cursor.index:], sep = ""))
+insert_string :: proc(b: ^Buffer, str: string, at: math.Position) {
+    index := pos_to_index(b, at)
 
-    for _ in 0 ..< len(str) {
-        move_cursor_right(b)
+    update_text(b, fmt.aprint(b.text[:index], str, b.text[index:], sep = ""))
+
+    move_cursor_horizontal(b, len(str))
+}
+
+match_indent :: proc(b: ^Buffer, src_line, dest_line: int) {
+    delta := get_indent(b, src_line) - get_indent(b, dest_line)
+
+    if delta > 0 {
+        indent_str := strings.repeat(" ", delta, context.temp_allocator)
+        insert_string(b, indent_str, {0, dest_line})
+    } else if delta < 0 {
+        // TODO: Implement this
     }
 }
 
-insert_line :: proc(b: ^Buffer) {
-    insert_character(b, u8('\n'))
-    insert_string(b, strings.repeat(" ", get_indent(b, b.cursor.pos.y - 1), context.temp_allocator))
+delete_range_position :: proc(b: ^Buffer, start, end: math.Position) {
+    start_index := pos_to_index(b, start)
+    end_index := pos_to_index(b, end)
+
+    delete_range_index(b, start_index, end_index)
 }
 
-insert_line_above :: proc(b: ^Buffer) {
-    prev_line_idx := b.cursor.pos.y
-
-    jump_to_line_start(b)
-
-    insert_string(b, strings.repeat(" ", get_indent(b, b.cursor.pos.y), context.temp_allocator))
-    insert_character(b, u8('\n'))
-
-    prev_line := b.lines[prev_line_idx]
-    b.cursor.index = prev_line.end
-    b.cursor.pos.y = prev_line_idx
-    b.cursor.pos.x = prev_line.end - prev_line.start
-}
-
-insert_line_below :: proc(b: ^Buffer) {
-    jump_to_line_end(b)
-    insert_line(b)
-}
-
-backspace_rune :: proc(b: ^Buffer) {
-    if b.cursor.index == 0 do return
-
-    old_cursor_position := b.cursor.index
-    if b.text[old_cursor_position - 1] == '\n' {
-        b.cursor.pos.y -= 1
-
-        line := b.lines[b.cursor.pos.y]
-
-        b.cursor.pos.x = get_line_length(b, b.cursor.pos.y)
-        b.cursor.index = line.end
-        b.cursor.virtual_column = b.cursor.pos.x
-    } else {
-        move_cursor_left(b)
+delete_range_index :: proc(b: ^Buffer, start_index, end_index: int) {
+    new_index := b.cursor.index
+    if b.cursor.index > start_index {
+        range_length := end_index - start_index
+        new_index = max(start_index, new_index - range_length)
     }
 
-    update_text(
-        b,
-        fmt.aprint(b.text[:old_cursor_position - 1], b.text[old_cursor_position:], sep = ""),
-    )
+    update_text(b, fmt.aprint(b.text[:start_index], b.text[end_index:], sep = ""))
+    set_cursor_index(b, new_index)
 }
 
-delete_rune :: proc(b: ^Buffer) {
-    if b.cursor.index == len(b.text) do return
-
-    update_text(b, fmt.aprint(b.text[:b.cursor.index], b.text[b.cursor.index + 1:], sep = ""))
-}
-
-delete_line :: proc(b: ^Buffer) {
-    line := b.lines[b.cursor.pos.y]
-    update_text(b, fmt.aprint(b.text[:line.start], b.text[line.end + 1:], sep = ""))
+delete_range :: proc {
+    delete_range_index,
+    delete_range_position,
 }
 
 destroy :: proc(b: Buffer) {
@@ -148,8 +117,27 @@ destroy :: proc(b: Buffer) {
 }
 
 get_line_length :: proc(b: ^Buffer, line_idx: int) -> int {
-    line := b.lines[line_idx]
-    return line.end - line.start
+    line_bounds := b.lines[line_idx]
+    return line_bounds.end - line_bounds.start
+}
+
+pos_to_index :: proc(b: ^Buffer, pos: math.Position) -> int {
+    line_bounds := b.lines[pos.y]
+    return line_bounds.start + pos.x
+}
+
+index_to_pos :: proc(b: ^Buffer, index: int) -> math.Position {
+    assert(index < len(b.text) && index >= 0, "Invalid index")
+
+    for line, line_index in b.lines {
+        if index <= line.end {
+            assert(index >= line.start, "Wrong line chosen")
+
+            return {index - line.start, line_index}
+        }
+    }
+
+    panic("Failed to find position matching index")
 }
 
 @(private)
@@ -188,14 +176,13 @@ remap_lines :: proc(b: ^Buffer) {
 }
 
 @(private)
-get_line :: proc(b: ^Buffer, line_idx: int) -> string {
-    line := b.lines[line_idx]
-    return b.text[line.start:line.end]
+get_line_str :: proc(b: ^Buffer, line_idx: int) -> string {
+    line_bounds := b.lines[line_idx]
+    return b.text[line_bounds.start:line_bounds.end]
 }
 
-@(private)
 get_indent :: proc(b: ^Buffer, line_idx: int) -> (indent: int) {
-    for r in get_line(b, line_idx) {
+    for r in get_line_str(b, line_idx) {
         if r == ' ' do indent += 1
         else do break
     }

@@ -1,10 +1,12 @@
 package buffer
 
 import "core:fmt"
+import "core:strings"
 
 import "bred:colors"
 import "bred:font"
 import "bred:math"
+import "bred:util"
 
 import rl "vendor:raylib"
 
@@ -25,7 +27,7 @@ render_fragment :: proc(
 
 @(private = "file")
 render_line :: proc(b: ^Buffer, screen_pos: math.Position, buffer_line, max_length: int) {
-    line := b.lines[buffer_line]
+    line_bounds := b.lines[buffer_line]
     remaining_length := max_length
 
     line_number_fragment: string
@@ -45,13 +47,29 @@ render_line :: proc(b: ^Buffer, screen_pos: math.Position, buffer_line, max_leng
         max_length,
         line_number_color,
     )
-    render_fragment(
+    remaining_length -= render_fragment(
         b,
-        b.text[line.start:line.end],
+        b.text[line_bounds.start:line_bounds.end],
         screen_pos + {4, 0},
         remaining_length,
         rl.WHITE,
     )
+
+    line_ending, _ := strings.replace(
+        b.text[line_bounds.end:line_bounds.end + 1],
+        "\n",
+        "\\n",
+        1,
+        context.temp_allocator,
+    )
+    remaining_length -= render_fragment(
+        b,
+        line_ending,
+        screen_pos + {4 + get_line_length(b, buffer_line), 0},
+        remaining_length,
+        rl.GRAY,
+    )
+
 }
 
 @(private = "file")
@@ -67,6 +85,17 @@ render_cursor :: proc(b: ^Buffer, rect: math.Rect, is_active_buffer: bool) {
 
     if is_active_buffer {
         font.draw_bg_rect({vectors = {screen_pos, {1, 1}}}, rl.WHITE)
+        when ODIN_DEBUG {
+            index_pos := index_to_pos(b, b.cursor.index)
+            index_screen_pos := index_pos + {rect.left + 4, -b.scroll}
+            rl.DrawRectangleLines(
+                font.ACTIVE_FONT.character_size.x * i32(index_screen_pos.x),
+                font.ACTIVE_FONT.character_size.y * i32(index_screen_pos.y),
+                font.ACTIVE_FONT.character_size.x,
+                font.ACTIVE_FONT.character_size.y,
+                rl.RED,
+            )
+        }
 
         if b.cursor.pos.x < get_line_length(b, b.cursor.pos.y) {
             font.write(

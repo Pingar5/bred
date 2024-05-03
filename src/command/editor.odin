@@ -37,9 +37,9 @@ update :: proc(state: ^EditorState) {
     active_buffer := state.portals[state.active_portal].contents
 
     for input in inputs {
-        command_proc := get_command(input)
+        command_proc, wildcards, command_exists := get_command(input)
 
-        command_proc(state, input)
+        if command_exists do command_proc(state, wildcards)
     }
 
     if rl.GetMouseWheelMove() != 0 {

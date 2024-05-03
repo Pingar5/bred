@@ -6,6 +6,7 @@ import "bred:command/builtin"
 init :: proc() {
     command.set_default_command(builtin.insert_character)
     
+    command.register({.Ctrl}, {.F, command.Wildcard.Char}, builtin.jump_to_character)
     // {     // Normal Mode
     //     command.register({{}, {.LEFT}}, buffer.move_cursor_left)
     //     command.register({{}, {.RIGHT}}, buffer.move_cursor_right)

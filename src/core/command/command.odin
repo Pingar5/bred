@@ -174,6 +174,7 @@ destroy_command_tree :: proc() {
     for i in 0 ..< len(tree.roots) {
         delete_node(tree.roots[i])
     }
+    delete(tree.default_commands)
 }
 
 register :: proc(

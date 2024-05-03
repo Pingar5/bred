@@ -1,6 +1,6 @@
 package main
 
-import "bred:builtin/components/status"
+import "bred:builtin/components"
 import "bred:colors"
 import "bred:core"
 import "bred:core/buffer"
@@ -59,7 +59,7 @@ main :: proc() {
     state.portals[1] = portal.create_file_portal(
         {components = {window_dims.x / 2, 0, window_dims.x / 2, window_dims.y - 1}},
     )
-    state.portals[2] = status.create_status_bar(
+    state.portals[2] = components.create_status_bar(
         {components = {0, window_dims.y - 1, window_dims.x, 1}},
     )
 

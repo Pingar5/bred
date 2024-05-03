@@ -27,7 +27,8 @@ destroy_editor :: proc(state: ^EditorState) {
 Portal :: struct {
     active:   bool,
     rect:     Rect,
-    contents: ^Buffer,
+    render:   proc(self: ^Portal, state: ^EditorState),
+    contents: rawptr,
 }
 
 ////////////////////

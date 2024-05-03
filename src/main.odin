@@ -1,11 +1,13 @@
 package main
 
+import "bred:builtin/components/status"
 import "bred:colors"
 import "bred:core"
 import "bred:core/buffer"
 import "bred:core/command"
 import "bred:core/editor"
 import "bred:core/font"
+import "bred:core/portal"
 import "bred:util/logger"
 import "user:config"
 
@@ -49,24 +51,23 @@ main :: proc() {
     state := editor.create()
     defer core.destroy(state)
 
-    for file_path in ([]string{"test.txt", "test2.txt"}) {
+    window_dims := font.calculate_window_dims()
+
+    state.portals[0] = portal.create_file_portal(
+        {components = {0, 0, window_dims.x / 2, window_dims.y - 1}},
+    )
+    state.portals[1] = portal.create_file_portal(
+        {components = {window_dims.x / 2, 0, window_dims.x / 2, window_dims.y - 1}},
+    )
+    state.portals[2] = status.create_status_bar(
+        {components = {0, window_dims.y - 1, window_dims.x, 1}},
+    )
+
+    for file_path, index in ([]string{"test.txt", "test2.txt"}) {
         b, buffer_ok := buffer.load_file(file_path)
         assert(buffer_ok, "Failed to load test file")
         append(&state.buffers, b)
-    }
-
-    window_dims := font.calculate_window_dims()
-
-    state.portals[0] = {
-        active = true,
-        contents = &state.buffers[0],
-        rect = {components = {0, 0, window_dims.x / 2, window_dims.y - 1}},
-    }
-
-    state.portals[1] = {
-        active = true,
-        contents = &state.buffers[1],
-        rect = {components = {window_dims.x / 2, 0, window_dims.x / 2, window_dims.y - 1}},
+        state.portals[index].contents = &state.buffers[len(state.buffers) - 1]
     }
 
     command.init_command_tree()

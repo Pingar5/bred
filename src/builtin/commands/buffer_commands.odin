@@ -16,7 +16,7 @@ Buffer :: core.Buffer
 get_active_buffer :: proc(state: ^EditorState) -> ^Buffer {
     portal := &state.portals[state.active_portal]
 
-    return portal.contents
+    return transmute(^Buffer)portal.contents
 }
 
 insert_character :: proc(state: ^EditorState, wildcards: []WildcardValue) {

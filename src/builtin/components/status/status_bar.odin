@@ -1,53 +1,79 @@
 package status_bar
 
-// import rl "vendor:raylib"
+import "core:strings"
+import rl "vendor:raylib"
 
-// import "bred:buffer"
-// import "bred:colors"
-// import "bred:command"
-// import "bred:font"
-// import "bred:core"
-// import "bred:util"
+import "bred:colors"
+import "bred:core"
+import "bred:core/buffer"
+import "bred:core/font"
+import "bred:util"
 
-// StatusBar :: struct {
-//     cb:            ^command.CommandBuffer,
-//     active_buffer: ^buffer.Buffer,
-// }
+@(private)
+draw_modifier :: proc(
+    mod: core.ModifierState,
+    mod_str: string,
+    pos: core.Position,
+    max_length: int,
+) -> int {
+    length := min(max_length, len(mod_str))
 
-// @(private)
-// draw_modifier :: proc(
-//     mod: command.ModifierState,
-//     mod_str: string,
-//     column: ^int,
-//     line: int,
-// ) {
-//     fg: rl.Color = rl.GRAY
-//     if mod.enabled || mod.held {
-//         bg := mod.locked ? colors.MODIFIER_LOCKED : colors.MODIFIER_ACTIVE
-//         fg = colors.TEXT
-//         font.draw_bg_rect({components = {column^, line, len(mod_str), 1}}, bg)
-//     }
+    fg: rl.Color = rl.GRAY
+    if mod.enabled || mod.held {
+        bg := mod.locked ? colors.MODIFIER_LOCKED : colors.MODIFIER_ACTIVE
+        fg = colors.TEXT
+        font.draw_bg_rect({components = {pos.x, pos.y, length, 1}}, bg)
+    }
 
-//     column^ = font.write({column^, line}, mod_str, fg)
-// }
+    return font.render_fragment(mod_str, pos, max_length, fg)
+}
 
-// render :: proc(sb: ^StatusBar, rect: core.Rect) {
-//     font.draw_bg_rect(rect, colors.STATUS_BAR_BACKGROUND)
+create_status_bar :: proc(rect: core.Rect) -> core.Portal {
+    render_status_bar :: proc(self: ^core.Portal, state: ^core.EditorState) {
+        font.draw_bg_rect(self.rect, colors.STATUS_BAR_BACKGROUND)
 
-//     column: int = 0
-//     draw_modifier(sb.cb.ctrl, " CTRL ", &column, rect.top)
-//     draw_modifier(sb.cb.shift, " SHIFT ", &column, rect.top)
-//     draw_modifier(sb.cb.alt, " ALT ", &column, rect.top)
+        column := 0
+        column += draw_modifier(state.command_buffer.ctrl, " CTRL ", self.rect.start, self.rect.width)
+        column += draw_modifier(
+            state.command_buffer.shift,
+            " SHIFT ",
+            self.rect.start + {column, 0},
+            self.rect.width - column,
+        )
+        column += draw_modifier(
+            state.command_buffer.alt,
+            " ALT ",
+            self.rect.start + {column, 0},
+            self.rect.width - column,
+        )
 
-//     column += 1
-//     if sb.cb.keys_length > 0 {
-//         for key_idx in 0 ..< sb.cb.keys_length {
-//             key := sb.cb.keys[key_idx]
-//             key_str := util.key_to_str(key)
-//             column = auto_cast font.write({column, rect.top}, key_str, colors.TEXT)
-//         }
-//     } else {
-//         column = auto_cast font.write({column, rect.top}, sb.active_buffer.file_path, rl.GRAY)
-//     }
+        column += 1
+        
+        command_buffer := &state.command_buffer
+        if command_buffer.keys_length > 0 {
+            column := 18
+            for key_idx in 0 ..< command_buffer.keys_length {
+                key := command_buffer.keys[key_idx]
+                key_str := util.key_to_str(key)
 
-// }
+                column += font.render_fragment(
+                    key_str,
+                    self.rect.start + {column, 0},
+                    self.rect.width - column,
+                    rl.WHITE,
+                )
+            }
+        } else {
+            // active_portal := state.portals[state.active_portal]
+
+            // font.render_fragment(
+            //     active_portal.title,
+            //     self.rect.start + {18, 0},
+            //     self.rect.width - 18,
+            //     rl.GRAY,
+            // )
+        }
+    }
+
+    return {active = true, rect = rect, render = render_status_bar}
+}

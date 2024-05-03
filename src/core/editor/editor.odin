@@ -21,24 +21,22 @@ create :: proc(allocator := context.allocator) -> (state: ^EditorState) {
 update :: proc(state: ^EditorState) {
     inputs := motion.tick(&state.command_buffer)
 
-    active_buffer := state.portals[state.active_portal].contents
-
     for input in inputs {
         command_proc, wildcards, command_exists := command.get_command(input)
 
         if command_exists do command_proc(state, wildcards)
     }
 
-    if rl.GetMouseWheelMove() != 0 {
-        active_buffer.scroll += rl.GetMouseWheelMove() > 0 ? -1 : 1
-        active_buffer.scroll = clamp(active_buffer.scroll, 0, len(active_buffer.lines) - 1)
-    }
+    // if rl.GetMouseWheelMove() != 0 {
+    //     active_buffer.scroll += rl.GetMouseWheelMove() > 0 ? -1 : 1
+    //     active_buffer.scroll = clamp(active_buffer.scroll, 0, len(active_buffer.lines) - 1)
+    // }
 }
 
 render :: proc(state: ^EditorState) {
     for &p, index in state.portals {
         if p.active {
-            portal.render(&p, index == state.active_portal)
+            p->render(state)
         }
     }
 }

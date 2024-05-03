@@ -5,6 +5,19 @@ import "bred:core"
 import "core:strings"
 import rl "vendor:raylib"
 
+render_fragment :: proc(
+    fragment: string,
+    pos: core.Position,
+    max_length: int,
+    color: rl.Color,
+) -> (
+    consumed_length: int,
+) {
+    visible := len(fragment) < max_length ? fragment : fragment[:max_length]
+    write(pos, visible, color)
+    return len(visible)
+}
+
 write :: proc(pos: core.Position, text: string, color: rl.Color) -> (ending_column: int) {
     c_text := strings.clone_to_cstring(text, context.temp_allocator)
     rl.DrawTextEx(

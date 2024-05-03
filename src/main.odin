@@ -67,7 +67,7 @@ main :: proc() {
         b, buffer_ok := buffer.load_file(file_path)
         assert(buffer_ok, "Failed to load test file")
         append(&state.buffers, b)
-        state.portals[index].contents = &state.buffers[len(state.buffers) - 1]
+        state.portals[index].buffer = &state.buffers[len(state.buffers) - 1]
     }
 
     command.init_command_tree()

@@ -33,7 +33,12 @@ create_status_bar :: proc(rect: core.Rect) -> core.Portal {
         font.draw_bg_rect(self.rect, colors.STATUS_BAR_BACKGROUND)
 
         column := 0
-        column += draw_modifier(state.command_buffer.ctrl, " CTRL ", self.rect.start, self.rect.width)
+        column += draw_modifier(
+            state.command_buffer.ctrl,
+            " CTRL ",
+            self.rect.start,
+            self.rect.width,
+        )
         column += draw_modifier(
             state.command_buffer.shift,
             " SHIFT ",
@@ -48,7 +53,7 @@ create_status_bar :: proc(rect: core.Rect) -> core.Portal {
         )
 
         column += 1
-        
+
         command_buffer := &state.command_buffer
         if command_buffer.keys_length > 0 {
             column := 18
@@ -64,14 +69,17 @@ create_status_bar :: proc(rect: core.Rect) -> core.Portal {
                 )
             }
         } else {
-            // active_portal := state.portals[state.active_portal]
+            active_portal := state.portals[state.active_portal]
 
-            // font.render_fragment(
-            //     active_portal.title,
-            //     self.rect.start + {18, 0},
-            //     self.rect.width - 18,
-            //     rl.GRAY,
-            // )
+            if active_portal.buffer != nil {
+                font.render_fragment(
+                    active_portal.buffer.file_path,
+                    self.rect.start + {18, 0},
+                    self.rect.width - 18,
+                    rl.GRAY,
+                )
+            }
+
         }
     }
 

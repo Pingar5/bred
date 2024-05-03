@@ -20,7 +20,7 @@ is_active_portal :: proc(self: ^Portal, state: ^core.EditorState) -> bool {
 
 create_file_portal :: proc(rect: core.Rect) -> Portal {
     render_file_portal :: proc(self: ^Portal, state: ^core.EditorState) {
-        contents := transmute(^core.Buffer)self.contents
+        contents := self.buffer
 
         font.draw_bg_rect(
             {components = {self.rect.left, self.rect.top, 3, self.rect.height}},

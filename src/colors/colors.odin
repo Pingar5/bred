@@ -4,6 +4,7 @@ import rl "vendor:raylib"
 
 BACKGROUND :: rl.Color{3, 0, 8, 255}
 TEXT :: rl.WHITE
+ESCAPED_CHARACTER :: rl.GRAY
 
 GUTTER_BACKGROUND :: rl.Color{34, 34, 36, 255}
 

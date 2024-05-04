@@ -24,6 +24,11 @@ generate_codepoint_list :: proc() {
             }
         }
     }
+    
+    for r in '─' ..= '╿' {
+        append(&codepoints, r)
+    }
+    
 
     CODEPOINTS = codepoints[:]
 }

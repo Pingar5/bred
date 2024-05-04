@@ -1,4 +1,4 @@
-package status_bar
+package components
 
 import "core:strings"
 import rl "vendor:raylib"

@@ -7,9 +7,16 @@ import "core:log"
 import "core:os"
 import "core:strings"
 
-@(private) Line :: core.Line
-@(private) Cursor :: core.Cursor
-@(private) Buffer :: core.Buffer
+@(private)
+Line :: core.Line
+@(private)
+Cursor :: core.Cursor
+@(private)
+Buffer :: core.Buffer
+
+create_empty :: proc(allocator := context.allocator) -> Buffer {
+    return {lines = make([dynamic]Line, 1, allocator)}
+}
 
 load_file :: proc(file_name: string, allocator := context.allocator) -> (b: Buffer, ok: bool) {
     buffer_data := os.read_entire_file(file_name, context.allocator) or_return
@@ -25,8 +32,8 @@ load_string :: proc(text: string, allocator := context.allocator) -> (b: Buffer)
     stripped_text, was_alloc := strings.replace_all(text, "\r", "", context.allocator)
     if was_alloc do delete(text)
 
+    b = create_empty(allocator)
     b.text = stripped_text
-    b.lines = make([dynamic]Line, allocator)
 
     remap_lines(&b)
 

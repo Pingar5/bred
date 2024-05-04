@@ -72,6 +72,13 @@ main :: proc() {
     state.portals[2] = components.create_status_bar(
         {components = {0, window_dims.y - 1, window_dims.x, 1}},
     )
+    
+    append(&state.buffers, buffer.create_empty())
+    state.portals[7] = components.create_file_browser(
+        {components = {37, 7, 100, 30}},
+        &state.buffers[2],
+    )
+    defer components.close_file_browser(&state.portals[7])
 
     command.init_command_tree()
     defer command.destroy_command_tree()

@@ -37,7 +37,11 @@ update :: proc(state: ^EditorState) {
     if active_portal.buffer != nil {
         if rl.GetMouseWheelMove() != 0 {
             active_portal.buffer.scroll += rl.GetMouseWheelMove() > 0 ? -1 : 1
-            active_portal.buffer.scroll = clamp(active_portal.buffer.scroll, 0, len(active_portal.buffer.lines) - 1)
+            active_portal.buffer.scroll = clamp(
+                active_portal.buffer.scroll,
+                0,
+                len(active_portal.buffer.lines) - 1,
+            )
         }
     }
 }

@@ -24,8 +24,13 @@ ensure_cursor_visible :: proc(b: ^Buffer, move_direction: int) {
 }
 
 set_cursor_index :: proc(b: ^Buffer, new_index: int) {
-    b.cursor.index = clamp(new_index, 0, len(b.text) - 1)
-    b.cursor.pos = index_to_pos(b, b.cursor.index)
+    if len(b.text) > 0 {
+        b.cursor.index = clamp(new_index, 0, len(b.text))
+        b.cursor.pos = index_to_pos(b, b.cursor.index)
+    } else {
+        b.cursor.index = 0
+        b.cursor.pos = {0, 0}
+    }
 }
 
 set_cursor_pos :: proc(b: ^Buffer, new_pos: core.Position) {

@@ -17,7 +17,7 @@ render_cursor :: proc(b: ^Buffer, rect: core.Rect) {
 
     when ODIN_DEBUG {
         index_pos := index_to_pos(b, b.cursor.index)
-        index_screen_pos := index_pos + {rect.left, -b.scroll}
+        index_screen_pos := index_pos + {rect.left, rect.top - b.scroll}
         rl.DrawRectangleLines(
             font.ACTIVE_FONT.character_size.x * i32(index_screen_pos.x),
             font.ACTIVE_FONT.character_size.y * i32(index_screen_pos.y),

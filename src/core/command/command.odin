@@ -84,7 +84,7 @@ delete_node :: proc(node: ^CommandTreeNode) {
 
     if node.char_wildcard != nil do delete_node(node.char_wildcard)
     if node.num_wildcard != nil do delete_node(node.num_wildcard)
-    
+
     for listing in node.commands {
         delete(listing.path)
     }

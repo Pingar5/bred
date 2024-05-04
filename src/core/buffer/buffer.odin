@@ -60,7 +60,7 @@ insert_string :: proc(b: ^Buffer, str: string, at: core.Position) {
 
     update_text(b, fmt.aprint(b.text[:index], str, b.text[index:], sep = ""))
 
-    move_cursor_horizontal(b, len(str))
+    if index <= b.cursor.index do move_cursor_horizontal(b, len(str))
 }
 
 match_indent :: proc(b: ^Buffer, src_line, dest_line: int) {
@@ -82,6 +82,8 @@ delete_range_position :: proc(b: ^Buffer, start, end: core.Position) {
 }
 
 delete_range_index :: proc(b: ^Buffer, start_index, end_index: int) {
+    if len(b.text) == 0 do return
+    
     new_index := b.cursor.index
     if b.cursor.index > start_index {
         range_length := end_index - start_index
@@ -103,12 +105,16 @@ get_line_length :: proc(b: ^Buffer, line_idx: int) -> int {
 }
 
 pos_to_index :: proc(b: ^Buffer, pos: core.Position) -> int {
+    if len(b.lines) == 0 do return 0
+
     line_bounds := b.lines[pos.y]
     return line_bounds.start + pos.x
 }
 
-index_to_pos :: proc(b: ^Buffer, index: int) -> core.Position {
-    assert(index < len(b.text) && index >= 0, "Invalid index")
+index_to_pos :: proc(b: ^Buffer, index: int, loc := #caller_location) -> core.Position {
+    if len(b.lines) == 0 do return {0, 0}
+    
+    assert(index <= len(b.text) && index >= 0, "Invalid index", loc)
 
     for line, line_index in b.lines {
         if index <= line.end {
@@ -137,7 +143,7 @@ remap_lines :: proc(b: ^Buffer) {
     for i in 0 ..< len(b.text) {
         r := b.text[i]
 
-        if r == '\n' || i + 1 == len(b.text) {
+        if r == '\n' {
             current_line.end = i
 
             if line_idx < len(b.lines) {
@@ -150,13 +156,20 @@ remap_lines :: proc(b: ^Buffer) {
             current_line.start = i + 1
         }
     }
+    
+    current_line.end = len(b.text)
+    if line_idx < len(b.lines) {
+        b.lines[line_idx] = current_line
+    } else {
+        append(&b.lines, current_line)
+    }
+    line_idx += 1
 
     for line_idx < len(b.lines) {
         pop(&b.lines)
     }
 }
 
-@(private)
 get_line_str :: proc(b: ^Buffer, line_idx: int) -> string {
     line_bounds := b.lines[line_idx]
     return b.text[line_bounds.start:line_bounds.end]

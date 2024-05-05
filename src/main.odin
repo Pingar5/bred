@@ -51,13 +51,14 @@ main :: proc() {
     state := editor.create()
     defer core.destroy(state)
 
-    command.init_command_tree()
-    defer command.destroy_command_tree()
+    command.register_command_set(state)
 
     config.init(state)
 
     assert(len(state.layouts) > 0, "User configuration must register at least one layout")
     layout.activate_layout(state, 0)
+    
+    state.portals[0].buffer = &state.buffers[0]
 
     for !(rl.WindowShouldClose()) {
         if rl.IsWindowResized() {

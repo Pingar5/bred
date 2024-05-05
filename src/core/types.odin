@@ -9,7 +9,8 @@ EditorState :: struct {
     layouts:        [dynamic]Layout,
     buffers:        [dynamic]Buffer,
     portals:        [dynamic]Portal,
-    motion_buffer: MotionBuffer,
+    command_sets:   [dynamic]CommandSet,
+    motion_buffer:  MotionBuffer,
     active_portal:  int,
     current_layout: int,
 }
@@ -23,9 +24,14 @@ destroy_editor :: proc(state: ^EditorState) {
         destroy(layout)
     }
 
+    for command_set in state.command_sets {
+        destroy(command_set)
+    }
+
     delete(state.buffers)
     delete(state.layouts)
     delete(state.portals)
+    delete(state.command_sets)
     free(state)
 }
 
@@ -54,10 +60,11 @@ Layout :: union {
 }
 
 Portal :: struct {
-    rect:   Rect,
-    render: proc(self: ^Portal, state: ^EditorState),
-    buffer: ^Buffer,
-    config: rawptr,
+    rect:           Rect,
+    render:         proc(self: ^Portal, state: ^EditorState),
+    command_set_id: int,
+    buffer:         ^Buffer,
+    config:         rawptr,
 }
 
 destroy_layout :: proc(layout: Layout) {
@@ -111,8 +118,46 @@ WildcardValue :: union {
     byte,
 }
 
-CommandConstraints :: struct {
-    requires_buffer: bool,
+CommandPath :: []union {
+    Wildcard,
+    rl.KeyboardKey,
+}
+
+CommandTreeNode :: struct {
+    children:      map[rl.KeyboardKey]^CommandTreeNode,
+    num_wildcard:  ^CommandTreeNode,
+    char_wildcard: ^CommandTreeNode,
+    command:      CommandListing,
+}
+
+CommandListing :: struct {
+    procedure:   CommandProc,
+    path:        CommandPath,
+}
+
+CommandSet :: struct {
+    roots:            [8]^CommandTreeNode,
+    default_commands: [dynamic]CommandListing,
+}
+
+destroy_command_set :: proc(command_set: CommandSet) {
+    destroy_node :: proc(node: ^CommandTreeNode) {
+        for _, child in node.children {
+            destroy_node(child)
+        }
+
+        if node.char_wildcard != nil do destroy_node(node.char_wildcard)
+        if node.num_wildcard != nil do destroy_node(node.num_wildcard)
+
+        delete(node.command.path)
+        delete(node.children)
+        free(node)
+    }
+
+    for i in 0 ..< len(command_set.roots) {
+        destroy_node(command_set.roots[i])
+    }
+    delete(command_set.default_commands)
 }
 
 ////////////////////
@@ -174,6 +219,7 @@ Rect :: struct #raw_union {
 ////////////////////
 destroy :: proc {
     destroy_buffer,
+    destroy_command_set,
     destroy_layout,
     destroy_editor,
     destroy_motion,

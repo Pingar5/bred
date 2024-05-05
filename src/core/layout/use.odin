@@ -13,8 +13,8 @@ clear_layout :: proc(state: ^core.EditorState) {
 
 @(private)
 PortalSpec :: struct {
-    rect:       core.Rect,
-    definition: core.PortalDefinition,
+    rect:           core.Rect,
+    definition:     core.PortalDefinition,
 }
 
 @(private)

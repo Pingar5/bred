@@ -20,18 +20,20 @@ create :: proc(allocator := context.allocator) -> (state: ^EditorState) {
 }
 
 update :: proc(state: ^EditorState) {
-    motions := motion.tick(&state.motion_buffer)
+    motions := motion.tick(state)
 
     active_portal := state.portals[state.active_portal]
 
     for motion in motions {
-        listings := command.get_commands(motion)
+        listing, found := command.get_commands(state, active_portal.command_set_id, motion)
 
-        for listing in listings {
-            if listing.constraints.requires_buffer && active_portal.buffer == nil do continue
-
-            listing.procedure(state, command.parse_wildcards(motion, listing.path))
+        if !found {
+            listing, found = command.get_commands(state, command.GLOBAL_SET, motion)
         }
+
+        if !found do return
+
+        listing.procedure(state, command.parse_wildcards(motion, listing.path))
     }
 
     if active_portal.buffer != nil {

@@ -1,52 +1,27 @@
 package command
 
 import "bred:core"
+import "bred:util"
 
 import "core:fmt"
 import "core:log"
 import "core:slice"
+import "core:strings"
 import rl "vendor:raylib"
 
 @(private)
-CommandProc :: core.CommandProc
+CommandPath :: core.CommandPath
 @(private)
-Modifiers :: core.Modifiers
+CommandTreeNode :: core.CommandTreeNode
 @(private)
-Wildcard :: core.Wildcard
+CommandListing :: core.CommandListing
 @(private)
-WildcardValue :: core.WildcardValue
-@(private)
-Motion :: core.Motion
-@(private)
-CommandConstraints :: core.CommandConstraints
+CommandSet :: core.CommandSet
 
-DEFAULT_COMMAND_CONSTRAINTS :: CommandConstraints {
-    requires_buffer = true,
-}
+GLOBAL_SET :: 0
 
 @(private)
-PathStep :: union {
-    core.Wildcard,
-    rl.KeyboardKey,
-}
-
-@(private)
-CommandTreeNode :: struct {
-    children:      map[rl.KeyboardKey]^CommandTreeNode,
-    num_wildcard:  ^CommandTreeNode,
-    char_wildcard: ^CommandTreeNode,
-    commands:      [dynamic]CommandListing,
-}
-
-@(private)
-CommandListing :: struct {
-    procedure:   CommandProc,
-    constraints: CommandConstraints,
-    path:        []PathStep,
-}
-
-@(private)
-MODIFIER_SET_PRECEDENCE :: [8]Modifiers {
+MODIFIER_SET_PRECEDENCE :: [8]core.Modifiers {
     {.Ctrl, .Shift, .Alt},
     {.Ctrl, .Shift},
     {.Ctrl, .Alt},
@@ -58,40 +33,23 @@ MODIFIER_SET_PRECEDENCE :: [8]Modifiers {
 }
 
 @(private)
-CommandTree :: struct {
-    roots:            [8]^CommandTreeNode,
-    default_commands: [dynamic]CommandListing,
+get_command_set :: proc(
+    state: ^core.EditorState,
+    set_id: int,
+    loc := #caller_location,
+) -> ^CommandSet {
+    assert(set_id >= 0, "Command set id cannot be negative", loc)
+    assert(set_id < len(state.command_sets), "Command set does not exist", loc)
+    return &state.command_sets[set_id]
 }
-
-@(private)
-tree: CommandTree
 
 @(private)
 create_node :: proc() -> (node: ^CommandTreeNode) {
     node = new(CommandTreeNode)
 
     node.children = make(map[rl.KeyboardKey]^CommandTreeNode)
-    node.commands = make([dynamic]CommandListing)
 
     return
-}
-
-@(private)
-delete_node :: proc(node: ^CommandTreeNode) {
-    for _, child in node.children {
-        delete_node(child)
-    }
-
-    if node.char_wildcard != nil do delete_node(node.char_wildcard)
-    if node.num_wildcard != nil do delete_node(node.num_wildcard)
-
-    for listing in node.commands {
-        delete(listing.path)
-    }
-
-    delete(node.commands)
-    delete(node.children)
-    free(node)
 }
 
 @(private)
@@ -138,7 +96,7 @@ get_existing_node :: proc(
 }
 
 @(private)
-add_node_at :: proc(current: ^CommandTreeNode, path: []PathStep) -> ^CommandTreeNode {
+add_node_at :: proc(current: ^CommandTreeNode, path: CommandPath) -> ^CommandTreeNode {
     if len(path) == 0 do return current
 
     switch step in path[0] {
@@ -148,7 +106,7 @@ add_node_at :: proc(current: ^CommandTreeNode, path: []PathStep) -> ^CommandTree
         }
 
         return add_node_at(current.children[step], path[1:])
-    case Wildcard:
+    case core.Wildcard:
         switch step {
         case .Char:
             if current.char_wildcard == nil do current.char_wildcard = create_node()
@@ -164,85 +122,126 @@ add_node_at :: proc(current: ^CommandTreeNode, path: []PathStep) -> ^CommandTree
     panic("Unreachable")
 }
 
-init_command_tree :: proc() {
-    for i in 0 ..< len(tree.roots) {
-        tree.roots[i] = create_node()
+to_string :: proc(
+    modifiers: core.Modifiers,
+    path: CommandPath,
+    allocator := context.temp_allocator,
+) -> string {
+    builder: strings.Builder
+    strings.builder_init(&builder, allocator)
+
+    if .Ctrl in modifiers do strings.write_string(&builder, "C")
+    if .Shift in modifiers do strings.write_string(&builder, "S")
+    if .Alt in modifiers do strings.write_string(&builder, "A")
+
+    if modifiers != {} do strings.write_string(&builder, "+")
+
+    strings.write_string(&builder, "[")
+    first := true
+    for step in path {
+        if !first do strings.write_string(&builder, ",")
+        first = false
+
+        switch key in step {
+        case rl.KeyboardKey:
+            strings.write_string(&builder, util.key_to_str(key))
+        case core.Wildcard:
+            switch key {
+            case .Num:
+                strings.write_string(&builder, "<Num>")
+            case .Char:
+                strings.write_string(&builder, "<Char>")
+            }
+        }
     }
+    strings.write_string(&builder, "]")
+
+    return strings.to_string(builder)
 }
 
-destroy_command_tree :: proc() {
-    for i in 0 ..< len(tree.roots) {
-        delete_node(tree.roots[i])
+register_command_set :: proc(state: ^core.EditorState) -> int {
+    set := CommandSet{}
+
+    for i in 0 ..< len(set.roots) {
+        set.roots[i] = create_node()
     }
-    delete(tree.default_commands)
+
+    append(&state.command_sets, set)
+    return len(state.command_sets) - 1
 }
 
 register :: proc(
-    modifiers: Modifiers,
-    path: []PathStep,
-    command: CommandProc,
-    constraints := DEFAULT_COMMAND_CONSTRAINTS,
+    state: ^core.EditorState,
+    set_id: int,
+    modifiers: core.Modifiers,
+    path: CommandPath,
+    command: core.CommandProc,
     allocator := context.allocator,
 ) {
-    node := add_node_at(tree.roots[transmute(u8)(modifiers)], path)
+    set := get_command_set(state, set_id)
+    node := add_node_at(set.roots[transmute(u8)(modifiers)], path)
 
-    append(&node.commands, CommandListing{command, constraints, slice.clone(path, allocator)})
-}
-
-register_default_command :: proc(
-    command: CommandProc,
-    constraints := DEFAULT_COMMAND_CONSTRAINTS,
-) {
-    append(&tree.default_commands, CommandListing{command, constraints, nil})
-}
-
-is_leaf_or_invalid :: proc(keys: Motion) -> bool {
-    for modifiers in MODIFIER_SET_PRECEDENCE {
-        if modifiers <= keys.modifiers {
-            root := tree.roots[transmute(u8)(modifiers)]
-
-            node, node_found := get_existing_node(root, keys.keys)
-
-            if node_found {
-                return(
-                    len(node.children) == 0 &&
-                    node.char_wildcard == nil &&
-                    node.num_wildcard == nil \
-                )
-            }
-        }
+    if node.command.path != nil {
+        delete(node.command.path)
+        log.errorf(
+            "Duplicate command definition in set %v at %s\n",
+            set_id,
+            to_string(modifiers, path),
+        )
     }
 
-    return true
+    node.command = {command, slice.clone(path, allocator)}
+}
+
+is_leaf_or_invalid :: proc(
+    state: ^core.EditorState,
+    set_id: int,
+    motion: core.Motion,
+) -> (
+    leaf, invalid: bool,
+) {
+    set := get_command_set(state, set_id)
+
+    root := set.roots[transmute(u8)(motion.modifiers)]
+
+    node, node_found := get_existing_node(root, motion.keys)
+
+    if node_found {
+        leaf = len(node.children) == 0 && node.char_wildcard == nil && node.num_wildcard == nil
+        return
+    }
+
+    return false, true
 }
 
 get_commands :: proc(
-    motion: Motion,
+    state: ^core.EditorState,
+    set_id: int,
+    motion: core.Motion,
     allocator := context.temp_allocator,
 ) -> (
-    commands: []CommandListing,
+    commands: CommandListing,
+    found: bool,
 ) {
-    for modifiers in MODIFIER_SET_PRECEDENCE {
-        if modifiers <= motion.modifiers {
-            root := tree.roots[transmute(u8)(modifiers)]
+    set := get_command_set(state, set_id)
 
-            node, node_found := get_existing_node(root, motion.keys)
+    root := set.roots[transmute(u8)(motion.modifiers)]
 
-            if node_found {
-                return node.commands[:]
-            }
-        }
+    node, node_found := get_existing_node(root, motion.keys)
+
+    if node_found {
+        return node.command, true
     }
 
-    return tree.default_commands[:]
+    return {}, false
 }
 
 parse_wildcards :: proc(
-    motion: Motion,
-    path: []PathStep,
+    motion: core.Motion,
+    path: CommandPath,
     allocator := context.temp_allocator,
-) -> []WildcardValue {
-    values := make([dynamic]WildcardValue, allocator)
+) -> []core.WildcardValue {
+    values := make([dynamic]core.WildcardValue, allocator)
 
     if path == nil {
         for char in motion.chars {
@@ -251,7 +250,7 @@ parse_wildcards :: proc(
     } else {
         motion_key: int
         for path_key, path_index in path {
-            wildcard, is_wildcard := path_key.(Wildcard)
+            wildcard, is_wildcard := path_key.(core.Wildcard)
 
             if !is_wildcard {
                 motion_key += 1

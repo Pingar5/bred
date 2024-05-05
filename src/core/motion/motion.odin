@@ -13,7 +13,7 @@ import "bred:core/command"
 @(private) Modifiers :: core.Modifiers
 
 MOD_HOLD_MINIMUM :: 0.15
-COMMAND_TIMEOUT :: 0.5
+COMMAND_TIMEOUT :: 1
 
 SKIP_KEYS :: []rl.KeyboardKey {
     .RIGHT_CONTROL,
@@ -24,7 +24,9 @@ SKIP_KEYS :: []rl.KeyboardKey {
     .LEFT_SHIFT,
 }
 
-tick :: proc(mb: ^MotionBuffer) -> []Motion {
+tick :: proc(state: ^core.EditorState) -> []Motion {
+    mb := &state.motion_buffer
+
     update_modifier(&mb.ctrl, .LEFT_CONTROL, .RIGHT_CONTROL)
     update_modifier(&mb.alt, .LEFT_ALT, .RIGHT_ALT)
     update_modifier(&mb.shift, .LEFT_SHIFT, .RIGHT_SHIFT)
@@ -58,9 +60,20 @@ tick :: proc(mb: ^MotionBuffer) -> []Motion {
 
         keys := Motion{modifiers, mb.keys[:mb.keys_length], mb.chars[:mb.keys_length]}
 
-        if (command.is_leaf_or_invalid(keys) ||
-               mb.timer > COMMAND_TIMEOUT ||
-               mb.keys_length == len(mb.keys)) {
+        portal_leaf, portal_invalid := command.is_leaf_or_invalid(
+            state,
+            state.portals[state.active_portal].command_set_id,
+            keys,
+        )
+        global_leaf, global_invalid := command.is_leaf_or_invalid(state, command.GLOBAL_SET, keys)
+
+        leaf :=
+            (portal_leaf && global_invalid) ||
+            (global_leaf && portal_invalid) ||
+            (global_leaf && portal_leaf)
+        invalid := portal_invalid && global_invalid
+
+        if (leaf || invalid || mb.timer > COMMAND_TIMEOUT || mb.keys_length == len(mb.keys)) {
             append(&inputs, keys)
             mb.keys_length = 0
 

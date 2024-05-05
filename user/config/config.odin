@@ -1,12 +1,22 @@
 package user
 
+import "core:log"
+
 import "bred:builtin/commands"
 import "bred:builtin/components"
 import "bred:core"
 import "bred:core/buffer"
 import "bred:core/command"
-import "bred:core/portal"
 import "bred:core/layout"
+import "bred:core/portal"
+
+EDITOR_COMMAND_SET: int
+
+create_file_portal :: proc(rect: core.Rect) -> (p: core.Portal) {
+    p = portal.create_file_portal(rect)
+    p.command_set_id = EDITOR_COMMAND_SET
+    return
+}
 
 open_default_buffers :: proc(state: ^core.EditorState) {
     for file_path, index in ([]string{"test.txt", "test2.txt"}) {
@@ -17,7 +27,7 @@ open_default_buffers :: proc(state: ^core.EditorState) {
 }
 
 build_layouts :: proc(state: ^core.EditorState) {
-    FILE := core.PortalDefinition(portal.create_file_portal)
+    FILE := core.PortalDefinition(create_file_portal)
     STATUS_BAR := core.PortalDefinition(components.create_status_bar)
 
     single_file := layout.create_absolute_split(.Bottom, 1, FILE, STATUS_BAR)
@@ -38,54 +48,62 @@ switch_layouts :: proc(state: ^core.EditorState, wildcards: []core.WildcardValue
     if layout_id >= len(state.layouts) do return
 
     layout.activate_layout(state, layout_id)
+
+    switch layout_id {
+    case 0:
+        state.portals[0].buffer = &state.buffers[0]
+    case 1:
+        state.portals[0].buffer = &state.buffers[0]
+        state.portals[1].buffer = &state.buffers[1]
+
+    }
 }
 
 init :: proc(state: ^core.EditorState) {
     open_default_buffers(state)
     build_layouts(state)
 
-    command.register_default_command(commands.insert_character)
+    EDITOR_COMMAND_SET = command.register_command_set(state)
 
-    // Normal
-    command.register({}, {.LEFT}, commands.move_cursor_left)
-    command.register({}, {.RIGHT}, commands.move_cursor_right)
-    command.register({}, {.UP}, commands.move_cursor_up)
-    command.register({}, {.DOWN}, commands.move_cursor_down)
+    command.register(state, command.GLOBAL_SET, {}, {.ESCAPE}, commands.clear_modifiers)
+    command.register(state, command.GLOBAL_SET, {.Ctrl}, {.LEFT}, commands.previous_portal)
+    command.register(state, command.GLOBAL_SET, {.Ctrl}, {.RIGHT}, commands.next_portal)
+    command.register(state, command.GLOBAL_SET, {.Ctrl}, {.L, .Num}, switch_layouts)
 
-    command.register({}, {.ENTER}, commands.insert_line)
-    command.register({.Shift}, {.ENTER}, commands.insert_line_above)
+    factory := command.factory_create(state, EDITOR_COMMAND_SET)
+    factory->register({.Char}, commands.insert_character)
+    factory->register({.LEFT}, commands.move_cursor_left)
+    factory->register({.RIGHT}, commands.move_cursor_right)
+    factory->register({.UP}, commands.move_cursor_up)
+    factory->register({.DOWN}, commands.move_cursor_down)
 
-    command.register({}, {.BACKSPACE}, commands.delete_behind)
-    command.register({}, {.DELETE}, commands.delete_ahead)
+    factory->register({.ENTER}, commands.insert_line)
+    factory->register({.BACKSPACE}, commands.delete_behind)
+    factory->register({.DELETE}, commands.delete_ahead)
+    factory->register({.END}, commands.jump_to_line_end)
+    factory->register({.HOME}, commands.jump_to_line_start)
+    factory->register({.PAGE_UP}, commands.page_up)
+    factory->register({.PAGE_DOWN}, commands.page_down)
 
-    command.register({}, {.END}, commands.jump_to_line_end)
-    command.register({}, {.HOME}, commands.jump_to_line_start)
-    command.register({}, {.PAGE_UP}, commands.page_up)
-    command.register({}, {.PAGE_DOWN}, commands.page_down)
+    factory.modifiers = {.Shift}
+    factory->register({.Char}, commands.insert_character)
+    factory->register({.ENTER}, commands.insert_line_above)
 
-    command.register({}, {.ESCAPE}, commands.clear_modifiers, {requires_buffer = false})
+    factory.modifiers = {.Ctrl}
+    factory->register({.F, .Char}, commands.jump_to_character)
+    factory->register({.H}, commands.move_cursor_left)
+    factory->register({.L}, commands.move_cursor_right)
+    factory->register({.K}, commands.move_cursor_up)
+    factory->register({.J}, commands.move_cursor_down)
+    factory->register({.Num, .H}, commands.move_cursor_left)
+    factory->register({.Num, .L}, commands.move_cursor_right)
+    factory->register({.Num, .K}, commands.move_cursor_up)
+    factory->register({.Num, .J}, commands.move_cursor_down)
+    factory->register({.ENTER}, commands.insert_line_below)
+    factory->register({.D, .D}, commands.delete_lines_below)
+    factory->register({.D, .Num, .D}, commands.delete_lines_below)
 
-    // Control
-    command.register({.Ctrl}, {.F, .Char}, commands.jump_to_character)
-
-    command.register({.Ctrl}, {.H}, commands.move_cursor_left)
-    command.register({.Ctrl}, {.L}, commands.move_cursor_right)
-    command.register({.Ctrl}, {.K}, commands.move_cursor_up)
-    command.register({.Ctrl}, {.J}, commands.move_cursor_down)
-
-    command.register({.Ctrl}, {.Num, .H}, commands.move_cursor_left)
-    command.register({.Ctrl}, {.Num, .L}, commands.move_cursor_right)
-    command.register({.Ctrl}, {.Num, .K}, commands.move_cursor_up)
-    command.register({.Ctrl}, {.Num, .J}, commands.move_cursor_down)
-
-    command.register({.Ctrl}, {.ENTER}, commands.insert_line_below)
-    command.register({.Ctrl, .Shift}, {.ENTER}, commands.insert_line_above)
-
-    command.register({.Ctrl}, {.D, .D}, commands.delete_lines_below)
-    command.register({.Ctrl}, {.D, .Num, .D}, commands.delete_lines_below)
-    command.register({.Ctrl, .Shift}, {.D, .Num, .D}, commands.delete_lines_above)
-
-    command.register({.Ctrl}, {.LEFT}, commands.previous_portal, {})
-    command.register({.Ctrl}, {.RIGHT}, commands.next_portal, {})
-    command.register({.Ctrl}, {.L, .Num}, switch_layouts, {})
+    factory.modifiers = {.Ctrl, .Shift}
+    factory->register({.ENTER}, commands.insert_line_above)
+    factory->register({.D, .Num, .D}, commands.delete_lines_above)
 }

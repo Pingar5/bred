@@ -198,7 +198,6 @@ create_file_browser :: proc(
     }
 
     portal = {
-        active = true,
         rect   = rect,
         render = render_file_browser,
         buffer = query_buffer,

@@ -69,5 +69,5 @@ create_file_portal :: proc(rect: core.Rect) -> Portal {
         if is_active_portal(self, state) do buffer.render_cursor(contents, buffer_rect)
     }
 
-    return {active = true, rect = rect, render = render_file_portal}
+    return {rect = rect, render = render_file_portal}
 }

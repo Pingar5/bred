@@ -83,5 +83,5 @@ create_status_bar :: proc(rect: core.Rect) -> core.Portal {
         }
     }
 
-    return {active = true, rect = rect, render = render_status_bar}
+    return {rect = rect, render = render_status_bar}
 }

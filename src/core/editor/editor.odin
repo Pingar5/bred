@@ -20,7 +20,7 @@ create :: proc(allocator := context.allocator) -> (state: ^EditorState) {
 }
 
 update :: proc(state: ^EditorState) {
-    motions := motion.tick(&state.command_buffer)
+    motions := motion.tick(&state.motion_buffer)
 
     active_portal := state.portals[state.active_portal]
 

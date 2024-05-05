@@ -7,7 +7,7 @@ import rl "vendor:raylib"
 import "bred:core"
 import "bred:core/command"
 
-@(private) CommandBuffer :: core.CommandBuffer
+@(private) MotionBuffer :: core.MotionBuffer
 @(private) Motion :: core.Motion
 @(private) ModifierState :: core.ModifierState
 @(private) Modifiers :: core.Modifiers
@@ -24,14 +24,14 @@ SKIP_KEYS :: []rl.KeyboardKey {
     .LEFT_SHIFT,
 }
 
-tick :: proc(cb: ^CommandBuffer) -> []Motion {
-    update_modifier(&cb.ctrl, .LEFT_CONTROL, .RIGHT_CONTROL)
-    update_modifier(&cb.alt, .LEFT_ALT, .RIGHT_ALT)
-    update_modifier(&cb.shift, .LEFT_SHIFT, .RIGHT_SHIFT)
+tick :: proc(mb: ^MotionBuffer) -> []Motion {
+    update_modifier(&mb.ctrl, .LEFT_CONTROL, .RIGHT_CONTROL)
+    update_modifier(&mb.alt, .LEFT_ALT, .RIGHT_ALT)
+    update_modifier(&mb.shift, .LEFT_SHIFT, .RIGHT_SHIFT)
 
     inputs := make([dynamic]Motion, context.temp_allocator)
 
-    cb.timer += rl.GetFrameTime()
+    mb.timer += rl.GetFrameTime()
 
     for {
         key := rl.GetKeyPressed()
@@ -44,44 +44,44 @@ tick :: proc(cb: ^CommandBuffer) -> []Motion {
         //      then this will map incorrectly
         char := byte(r)
 
-        cb.timer = 0
-        cb.keys[cb.keys_length] = key
-        cb.chars[cb.keys_length] = char
-        cb.keys_length += 1
+        mb.timer = 0
+        mb.keys[mb.keys_length] = key
+        mb.chars[mb.keys_length] = char
+        mb.keys_length += 1
     }
 
-    if cb.keys_length > 0 {
+    if mb.keys_length > 0 {
         modifiers: Modifiers
-        if cb.ctrl.enabled || cb.ctrl.held do modifiers += {.Ctrl}
-        if cb.shift.enabled || cb.shift.held do modifiers += {.Shift}
-        if cb.alt.enabled || cb.alt.held do modifiers += {.Alt}
+        if mb.ctrl.enabled || mb.ctrl.held do modifiers += {.Ctrl}
+        if mb.shift.enabled || mb.shift.held do modifiers += {.Shift}
+        if mb.alt.enabled || mb.alt.held do modifiers += {.Alt}
 
-        keys := Motion{modifiers, cb.keys[:cb.keys_length], cb.chars[:cb.keys_length]}
+        keys := Motion{modifiers, mb.keys[:mb.keys_length], mb.chars[:mb.keys_length]}
 
         if (command.is_leaf_or_invalid(keys) ||
-               cb.timer > COMMAND_TIMEOUT ||
-               cb.keys_length == len(cb.keys)) {
+               mb.timer > COMMAND_TIMEOUT ||
+               mb.keys_length == len(mb.keys)) {
             append(&inputs, keys)
-            cb.keys_length = 0
+            mb.keys_length = 0
 
-            cb.ctrl.enabled = cb.ctrl.locked
-            cb.alt.enabled = cb.alt.locked
-            cb.shift.enabled = cb.shift.locked
+            mb.ctrl.enabled = mb.ctrl.locked
+            mb.alt.enabled = mb.alt.locked
+            mb.shift.enabled = mb.shift.locked
         }
     }
 
     return inputs[:]
 }
 
-clear_modifiers :: proc(cb: ^CommandBuffer) {
-    cb.ctrl.enabled = false
-    cb.ctrl.locked = false
+clear_modifiers :: proc(mb: ^MotionBuffer) {
+    mb.ctrl.enabled = false
+    mb.ctrl.locked = false
 
-    cb.shift.enabled = false
-    cb.shift.locked = false
+    mb.shift.enabled = false
+    mb.shift.locked = false
 
-    cb.alt.enabled = false
-    cb.alt.locked = false
+    mb.alt.enabled = false
+    mb.alt.locked = false
 }
 
 @(private)

@@ -34,19 +34,19 @@ create_status_bar :: proc(rect: core.Rect) -> core.Portal {
 
         column := 0
         column += draw_modifier(
-            state.command_buffer.ctrl,
+            state.motion_buffer.ctrl,
             " CTRL ",
             self.rect.start,
             self.rect.width,
         )
         column += draw_modifier(
-            state.command_buffer.shift,
+            state.motion_buffer.shift,
             " SHIFT ",
             self.rect.start + {column, 0},
             self.rect.width - column,
         )
         column += draw_modifier(
-            state.command_buffer.alt,
+            state.motion_buffer.alt,
             " ALT ",
             self.rect.start + {column, 0},
             self.rect.width - column,
@@ -54,11 +54,11 @@ create_status_bar :: proc(rect: core.Rect) -> core.Portal {
 
         column += 1
 
-        command_buffer := &state.command_buffer
-        if command_buffer.keys_length > 0 {
+        motion_buffer := &state.motion_buffer
+        if motion_buffer.keys_length > 0 {
             column := 18
-            for key_idx in 0 ..< command_buffer.keys_length {
-                key := command_buffer.keys[key_idx]
+            for key_idx in 0 ..< motion_buffer.keys_length {
+                key := motion_buffer.keys[key_idx]
                 key_str := util.key_to_str(key)
 
                 column += font.render_fragment(

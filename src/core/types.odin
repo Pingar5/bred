@@ -9,7 +9,7 @@ EditorState :: struct {
     layouts:        [dynamic]Layout,
     buffers:        [dynamic]Buffer,
     portals:        [dynamic]Portal,
-    command_buffer: CommandBuffer,
+    motion_buffer: MotionBuffer,
     active_portal:  int,
     current_layout: int,
 }
@@ -138,7 +138,7 @@ Motion :: struct {
     chars:     []byte,
 }
 
-CommandBuffer :: struct {
+MotionBuffer :: struct {
     ctrl, shift, alt: ModifierState,
     keys_length:      uint,
     keys:             [8]rl.KeyboardKey,

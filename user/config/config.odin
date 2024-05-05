@@ -7,7 +7,6 @@ import "bred:core/buffer"
 import "bred:core/command"
 import "bred:core/portal"
 
-
 open_default_buffers :: proc(state: ^core.EditorState) {
     for file_path, index in ([]string{"test.txt", "test2.txt"}) {
         b, buffer_ok := buffer.load_file(file_path)
@@ -25,7 +24,7 @@ build_layouts :: proc(state: ^core.EditorState) {
     double_file := portal.create_absolute_split(
         .Bottom,
         1,
-        portal.create_percent_split(.Left, 50, FILE, FILE),
+        portal.create_percent_split(.Right, 50, FILE, FILE),
         STATUS_BAR,
     )
 

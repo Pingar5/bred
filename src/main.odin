@@ -7,7 +7,7 @@ import "bred:core/buffer"
 import "bred:core/command"
 import "bred:core/editor"
 import "bred:core/font"
-import "bred:core/portal"
+import "bred:core/layout"
 import "bred:util/logger"
 import "user:config"
 
@@ -57,11 +57,11 @@ main :: proc() {
     config.init(state)
 
     assert(len(state.layouts) > 0, "User configuration must register at least one layout")
-    portal.activate_layout(state, 0)
+    layout.activate_layout(state, 0)
 
     for !(rl.WindowShouldClose()) {
         if rl.IsWindowResized() {
-            portal.resize_layout(state)
+            layout.resize_layout(state)
         }
         
         editor.update(state)

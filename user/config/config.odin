@@ -6,6 +6,7 @@ import "bred:core"
 import "bred:core/buffer"
 import "bred:core/command"
 import "bred:core/portal"
+import "bred:core/layout"
 
 open_default_buffers :: proc(state: ^core.EditorState) {
     for file_path, index in ([]string{"test.txt", "test2.txt"}) {
@@ -19,24 +20,24 @@ build_layouts :: proc(state: ^core.EditorState) {
     FILE := core.PortalDefinition(portal.create_file_portal)
     STATUS_BAR := core.PortalDefinition(components.create_status_bar)
 
-    single_file := portal.create_absolute_split(.Bottom, 1, FILE, STATUS_BAR)
+    single_file := layout.create_absolute_split(.Bottom, 1, FILE, STATUS_BAR)
 
-    double_file := portal.create_absolute_split(
+    double_file := layout.create_absolute_split(
         .Bottom,
         1,
-        portal.create_percent_split(.Right, 50, FILE, FILE),
+        layout.create_percent_split(.Right, 50, FILE, FILE),
         STATUS_BAR,
     )
 
-    portal.register_layout(state, single_file)
-    portal.register_layout(state, double_file)
+    layout.register_layout(state, single_file)
+    layout.register_layout(state, double_file)
 }
 
 switch_layouts :: proc(state: ^core.EditorState, wildcards: []core.WildcardValue) {
     layout_id := wildcards[0].(int)
     if layout_id >= len(state.layouts) do return
 
-    portal.activate_layout(state, layout_id)
+    layout.activate_layout(state, layout_id)
 }
 
 init :: proc(state: ^core.EditorState) {

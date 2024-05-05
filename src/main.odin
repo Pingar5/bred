@@ -51,39 +51,13 @@ main :: proc() {
     state := editor.create()
     defer core.destroy(state)
 
-    for file_path, index in ([]string{"test.txt", "test2.txt"}) {
-        b, buffer_ok := buffer.load_file(file_path)
-        assert(buffer_ok, "Failed to load test file")
-        append(&state.buffers, b)
-    }
-
-    window_dims := font.calculate_window_dims()
-
-    state.portals[0] = portal.create_file_portal(
-        {components = {0, 0, window_dims.x / 2, window_dims.y - 1}},
-    )
-    state.portals[0].buffer = &state.buffers[0]
-
-    state.portals[1] = portal.create_file_portal(
-        {components = {window_dims.x / 2, 0, window_dims.x / 2, window_dims.y - 1}},
-    )
-    state.portals[1].buffer = &state.buffers[1]
-
-    state.portals[2] = components.create_status_bar(
-        {components = {0, window_dims.y - 1, window_dims.x, 1}},
-    )
-    
-    append(&state.buffers, buffer.create_empty())
-    state.portals[7] = components.create_file_browser(
-        {components = {37, 7, 100, 30}},
-        &state.buffers[2],
-    )
-    defer components.close_file_browser(&state.portals[7])
-
     command.init_command_tree()
     defer command.destroy_command_tree()
 
-    config.init()
+    config.init(state)
+
+    assert(len(state.layouts) > 0, "User configuration must register at least one layout")
+    portal.activate_layout(state, 0)
 
     for !(rl.WindowShouldClose()) {
         editor.update(state)

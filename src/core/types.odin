@@ -6,9 +6,10 @@ import rl "vendor:raylib"
 //     EDITOR     //
 ////////////////////
 EditorState :: struct {
+    layouts:        [dynamic]Layout,
     buffers:        [dynamic]Buffer,
+    portals:        [dynamic]Portal,
     command_buffer: CommandBuffer,
-    portals:        [8]Portal,
     active_portal:  int,
 }
 
@@ -17,19 +18,55 @@ destroy_editor :: proc(state: ^EditorState) {
         destroy(b)
     }
 
+    for layout in state.layouts {
+        destroy(layout)
+    }
+
     delete(state.buffers)
+    delete(state.layouts)
+    delete(state.portals)
     free(state)
 }
 
 ////////////////////
 //     PORTALS    //
 ////////////////////
+PortalDefinition :: proc(rect: Rect) -> Portal
+
+SplitDirection :: enum {
+    Left,
+    Right,
+    Top,
+    Bottom,
+}
+Split :: struct {
+    direction:       SplitDirection,
+    absolute_size:   int,
+    percent_size:    int,
+    primary_child:   Layout,
+    secondary_child: Layout,
+}
+
+Layout :: union {
+    ^Split,
+    PortalDefinition,
+}
+
 Portal :: struct {
     active: bool,
     rect:   Rect,
     render: proc(self: ^Portal, state: ^EditorState),
     buffer: ^Buffer,
     config: rawptr,
+}
+
+destroy_layout :: proc(layout: Layout) {
+    split, is_split := layout.(^Split)
+    if is_split {
+        destroy_layout(split.primary_child)
+        destroy_layout(split.secondary_child)
+        free(split)
+    }
 }
 
 ////////////////////
@@ -137,6 +174,7 @@ Rect :: struct #raw_union {
 ////////////////////
 destroy :: proc {
     destroy_buffer,
+    destroy_layout,
     destroy_editor,
     destroy_motion,
 }

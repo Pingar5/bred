@@ -1,9 +1,49 @@
 package user
 
 import "bred:builtin/commands"
+import "bred:builtin/components"
+import "bred:core"
+import "bred:core/buffer"
 import "bred:core/command"
+import "bred:core/portal"
 
-init :: proc() {
+
+open_default_buffers :: proc(state: ^core.EditorState) {
+    for file_path, index in ([]string{"test.txt", "test2.txt"}) {
+        b, buffer_ok := buffer.load_file(file_path)
+        assert(buffer_ok, "Failed to load test file")
+        append(&state.buffers, b)
+    }
+}
+
+build_layouts :: proc(state: ^core.EditorState) {
+    FILE := core.PortalDefinition(portal.create_file_portal)
+    STATUS_BAR := core.PortalDefinition(components.create_status_bar)
+
+    single_file := portal.create_absolute_split(.Bottom, 1, FILE, STATUS_BAR)
+
+    double_file := portal.create_absolute_split(
+        .Bottom,
+        1,
+        portal.create_percent_split(.Left, 50, FILE, FILE),
+        STATUS_BAR,
+    )
+
+    portal.register_layout(state, single_file)
+    portal.register_layout(state, double_file)
+}
+
+switch_layouts :: proc(state: ^core.EditorState, wildcards: []core.WildcardValue) {
+    layout_id := wildcards[0].(int)
+    if layout_id >= len(state.layouts) do return
+
+    portal.activate_layout(state, layout_id)
+}
+
+init :: proc(state: ^core.EditorState) {
+    open_default_buffers(state)
+    build_layouts(state)
+
     command.register_default_command(commands.insert_character)
 
     // Normal
@@ -45,7 +85,7 @@ init :: proc() {
     command.register({.Ctrl}, {.D, .Num, .D}, commands.delete_lines_below)
     command.register({.Ctrl, .Shift}, {.D, .Num, .D}, commands.delete_lines_above)
 
-    command.register({.Ctrl}, {.LEFT}, commands.previous_portal, {requires_buffer = false})
-    command.register({.Ctrl}, {.RIGHT}, commands.next_portal, {requires_buffer = false})
-
+    command.register({.Ctrl}, {.LEFT}, commands.previous_portal, {})
+    command.register({.Ctrl}, {.RIGHT}, commands.next_portal, {})
+    command.register({.Ctrl}, {.L, .Num}, switch_layouts, {})
 }

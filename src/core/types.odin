@@ -11,6 +11,7 @@ EditorState :: struct {
     portals:        [dynamic]Portal,
     command_buffer: CommandBuffer,
     active_portal:  int,
+    current_layout: int,
 }
 
 destroy_editor :: proc(state: ^EditorState) {

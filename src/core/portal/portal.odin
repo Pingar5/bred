@@ -10,7 +10,7 @@ import "bred:core/font"
 
 import rl "vendor:raylib"
 
-@(private)
+@(private = "file")
 Portal :: core.Portal
 
 is_active_portal :: proc(self: ^Portal, state: ^core.EditorState) -> bool {
@@ -57,7 +57,7 @@ create_file_portal :: proc(rect: core.Rect) -> Portal {
         }
 
         buffer_rect := core.Rect {
-            components =  {
+            components = {
                 self.rect.left + 4,
                 self.rect.top,
                 self.rect.width - 4,

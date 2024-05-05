@@ -25,7 +25,14 @@ clear_layout :: proc(state: ^core.EditorState) {
     clear(&state.portals)
 }
 
-build_layout :: proc(state: ^core.EditorState, layout: Layout, rect: core.Rect) {
+@(private)
+PortalSpec :: struct {
+    rect:       core.Rect,
+    definition: core.PortalDefinition,
+}
+
+@(private)
+build_layout :: proc(portals: ^[dynamic]PortalSpec, layout: Layout, rect: core.Rect) {
     switch typed_layout in layout {
     case ^core.Split:
         primary_rect := rect
@@ -65,21 +72,41 @@ build_layout :: proc(state: ^core.EditorState, layout: Layout, rect: core.Rect) 
             secondary_rect.width = split_size
         }
 
-        build_layout(state, typed_layout.primary_child, primary_rect)
-        build_layout(state, typed_layout.secondary_child, secondary_rect)
+        build_layout(portals, typed_layout.primary_child, primary_rect)
+        build_layout(portals, typed_layout.secondary_child, secondary_rect)
     case core.PortalDefinition:
-        append(&state.portals, typed_layout(rect))
+        append(portals, PortalSpec{rect, typed_layout})
     }
 }
 
 activate_layout :: proc(state: ^core.EditorState, layout_id: int) {
     clear_layout(state)
+    state.current_layout = layout_id
 
-    portal_index: int
-    full_window_rect := core.Rect {
-        vectors = {{0, 0}, font.calculate_window_dims()},
+    portal_specs := make([dynamic]PortalSpec, context.temp_allocator)
+    build_layout(
+        &portal_specs,
+        state.layouts[layout_id],
+        {vectors = {{0, 0}, font.calculate_window_dims()}},
+    )
+
+    for spec in portal_specs {
+        append(&state.portals, spec.definition(spec.rect))
     }
-    build_layout(state, state.layouts[layout_id], full_window_rect)
+}
+
+resize_layout :: proc(state: ^core.EditorState) {
+    portal_specs := make([dynamic]PortalSpec, context.temp_allocator)
+    build_layout(
+        &portal_specs,
+        state.layouts[state.current_layout],
+        {vectors = {{0, 0}, font.calculate_window_dims()}},
+    )
+
+    for spec, index in portal_specs {
+        state.portals[index].rect = spec.rect
+    }
+
 }
 
 create_absolute_split :: proc(

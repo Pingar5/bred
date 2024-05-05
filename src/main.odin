@@ -60,6 +60,10 @@ main :: proc() {
     portal.activate_layout(state, 0)
 
     for !(rl.WindowShouldClose()) {
+        if rl.IsWindowResized() {
+            portal.resize_layout(state)
+        }
+        
         editor.update(state)
 
         rl.BeginDrawing()

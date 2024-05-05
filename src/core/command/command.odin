@@ -275,6 +275,7 @@ parse_wildcards :: proc(
                     }
 
                     motion_key += 1
+                    if motion_key >= len(motion.keys) do break
                     key = motion.keys[motion_key]
                 }
                 append(&values, num)

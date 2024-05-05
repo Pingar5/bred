@@ -18,7 +18,7 @@ PortalSpec :: struct {
 }
 
 @(private)
-build_layout :: proc(portals: ^[dynamic]PortalSpec, layout: Layout, rect: core.Rect) {
+expand_layout :: proc(portals: ^[dynamic]PortalSpec, layout: Layout, rect: core.Rect) {
     switch typed_layout in layout {
     case ^core.Split:
         primary_rect := rect
@@ -58,8 +58,8 @@ build_layout :: proc(portals: ^[dynamic]PortalSpec, layout: Layout, rect: core.R
             secondary_rect.width = split_size
         }
 
-        build_layout(portals, typed_layout.primary_child, primary_rect)
-        build_layout(portals, typed_layout.secondary_child, secondary_rect)
+        expand_layout(portals, typed_layout.primary_child, primary_rect)
+        expand_layout(portals, typed_layout.secondary_child, secondary_rect)
     case core.PortalDefinition:
         append(portals, PortalSpec{rect, typed_layout})
     }
@@ -70,7 +70,7 @@ activate_layout :: proc(state: ^core.EditorState, layout_id: int) {
     state.current_layout = layout_id
 
     portal_specs := make([dynamic]PortalSpec, context.temp_allocator)
-    build_layout(
+    expand_layout(
         &portal_specs,
         state.layouts[layout_id],
         {vectors = {{0, 0}, font.calculate_window_dims()}},
@@ -83,7 +83,7 @@ activate_layout :: proc(state: ^core.EditorState, layout_id: int) {
 
 resize_layout :: proc(state: ^core.EditorState) {
     portal_specs := make([dynamic]PortalSpec, context.temp_allocator)
-    build_layout(
+    expand_layout(
         &portal_specs,
         state.layouts[state.current_layout],
         {vectors = {{0, 0}, font.calculate_window_dims()}},

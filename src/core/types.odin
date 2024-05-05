@@ -54,7 +54,6 @@ Layout :: union {
 }
 
 Portal :: struct {
-    active: bool,
     rect:   Rect,
     render: proc(self: ^Portal, state: ^EditorState),
     buffer: ^Buffer,

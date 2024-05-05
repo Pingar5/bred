@@ -48,28 +48,16 @@ update :: proc(state: ^EditorState) {
 
 render :: proc(state: ^EditorState) {
     for &p, index in state.portals {
-        if p.active {
-            p->render(state)
-        }
+        p->render(state)
     }
 }
 
 next_portal :: proc(state: ^EditorState) {
     state.active_portal += 1
     state.active_portal %= len(state.portals)
-
-    for !state.portals[state.active_portal].active {
-        state.active_portal += 1
-        state.active_portal %= len(state.portals)
-    }
 }
 
 previous_portal :: proc(state: ^EditorState) {
     state.active_portal += len(state.portals) - 1
     state.active_portal %= len(state.portals)
-
-    for !state.portals[state.active_portal].active {
-        state.active_portal += len(state.portals) - 1
-        state.active_portal %= len(state.portals)
-    }
 }

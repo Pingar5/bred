@@ -41,6 +41,8 @@ load_string :: proc(text: string, allocator := context.allocator) -> (b: Buffer)
 }
 
 save :: proc(b: Buffer) -> bool {
+    if !b.is_dirty do return true
+
     if b.file_path == "" {
         log.error("Cannot save buffer, it does not have a file path\n")
         return false
@@ -90,7 +92,7 @@ delete_range_position :: proc(b: ^Buffer, start, end: core.Position) {
 
 delete_range_index :: proc(b: ^Buffer, start_index, end_index: int) {
     if len(b.text) == 0 do return
-    
+
     new_index := b.cursor.index
     if b.cursor.index > start_index {
         range_length := end_index - start_index
@@ -120,7 +122,7 @@ pos_to_index :: proc(b: ^Buffer, pos: core.Position) -> int {
 
 index_to_pos :: proc(b: ^Buffer, index: int, loc := #caller_location) -> core.Position {
     if len(b.lines) == 0 do return {0, 0}
-    
+
     assert(index <= len(b.text) && index >= 0, "Invalid index", loc)
 
     for line, line_index in b.lines {
@@ -139,6 +141,7 @@ update_text :: proc(b: ^Buffer, new_text: string) {
     delete(b.text)
 
     b.text = new_text
+    b.is_dirty = true
 
     remap_lines(b)
 }
@@ -163,7 +166,7 @@ remap_lines :: proc(b: ^Buffer) {
             current_line.start = i + 1
         }
     }
-    
+
     current_line.end = len(b.text)
     if line_idx < len(b.lines) {
         b.lines[line_idx] = current_line

@@ -97,6 +97,7 @@ Cursor :: struct {
 
 Buffer :: struct {
     file_path: string,
+    is_dirty:  bool,
     text:      string,
     cursor:    Cursor,
     lines:     [dynamic]Line,

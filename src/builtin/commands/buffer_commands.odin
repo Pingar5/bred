@@ -73,7 +73,7 @@ move_cursor_up :: proc(state: ^EditorState, wildcards: []WildcardValue) {
     if len(wildcards) > 0 {
         is_int: bool
         distance, is_int = wildcards[0].(int)
-        assert(is_int, "move_cursor_up command can only accent a Wildcard.Num")
+        assert(is_int, "move_cursor_up command can only accept a Wildcard.Num")
     }
 
     buffer.move_cursor_vertical(active_buffer, -distance)
@@ -86,7 +86,7 @@ move_cursor_down :: proc(state: ^EditorState, wildcards: []WildcardValue) {
     if len(wildcards) > 0 {
         is_int: bool
         distance, is_int = wildcards[0].(int)
-        assert(is_int, "move_cursor_down command can only accent a Wildcard.Num")
+        assert(is_int, "move_cursor_down command can only accept a Wildcard.Num")
     }
 
     buffer.move_cursor_vertical(active_buffer, distance)
@@ -99,7 +99,7 @@ move_cursor_left :: proc(state: ^EditorState, wildcards: []WildcardValue) {
     if len(wildcards) > 0 {
         is_int: bool
         distance, is_int = wildcards[0].(int)
-        assert(is_int, "move_cursor_left command can only accent a Wildcard.Num")
+        assert(is_int, "move_cursor_left command can only accept a Wildcard.Num")
     }
 
     buffer.move_cursor_horizontal(active_buffer, -distance)
@@ -112,7 +112,7 @@ move_cursor_right :: proc(state: ^EditorState, wildcards: []WildcardValue) {
     if len(wildcards) > 0 {
         is_int: bool
         distance, is_int = wildcards[0].(int)
-        assert(is_int, "move_cursor_right command can only accent a Wildcard.Num")
+        assert(is_int, "move_cursor_right command can only accept a Wildcard.Num")
     }
 
     buffer.move_cursor_horizontal(active_buffer, distance)
@@ -153,7 +153,7 @@ delete_lines_above :: proc(state: ^EditorState, wildcards: []WildcardValue) {
     if len(wildcards) > 0 {
         is_int: bool
         line_count, is_int = wildcards[0].(int)
-        assert(is_int, "delete_lines_below command can only accent a Wildcard.Num")
+        assert(is_int, "delete_lines_below command can only accept a Wildcard.Num")
     }
 
     end_line := active_buffer.cursor.pos.y
@@ -171,7 +171,7 @@ delete_lines_below :: proc(state: ^EditorState, wildcards: []WildcardValue) {
     if len(wildcards) > 0 {
         is_int: bool
         line_count, is_int = wildcards[0].(int)
-        assert(is_int, "delete_lines_below command can only accent a Wildcard.Num")
+        assert(is_int, "delete_lines_below command can only accept a Wildcard.Num")
     }
 
     end_line := min(active_buffer.cursor.pos.y + (line_count - 1), len(active_buffer.lines) - 1)

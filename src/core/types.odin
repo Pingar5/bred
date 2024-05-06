@@ -24,6 +24,10 @@ destroy_editor :: proc(state: ^EditorState) {
         destroy(layout)
     }
 
+    for &portal in state.portals {
+        if portal.destroy != nil do portal->destroy()
+    }
+
     for command_set in state.command_sets {
         destroy(command_set)
     }
@@ -60,8 +64,10 @@ Layout :: union {
 }
 
 Portal :: struct {
+    type:           string,
     rect:           Rect,
     render:         proc(self: ^Portal, state: ^EditorState),
+    destroy:        proc(self: ^Portal),
     command_set_id: int,
     buffer:         ^Buffer,
     config:         rawptr,
@@ -100,6 +106,7 @@ Buffer :: struct {
 destroy_buffer :: proc(b: Buffer) {
     delete(b.text)
     delete(b.lines)
+    delete(b.file_path)
 }
 
 
@@ -127,12 +134,12 @@ CommandTreeNode :: struct {
     children:      map[rl.KeyboardKey]^CommandTreeNode,
     num_wildcard:  ^CommandTreeNode,
     char_wildcard: ^CommandTreeNode,
-    command:      CommandListing,
+    command:       CommandListing,
 }
 
 CommandListing :: struct {
-    procedure:   CommandProc,
-    path:        CommandPath,
+    procedure: CommandProc,
+    path:      CommandPath,
 }
 
 CommandSet :: struct {

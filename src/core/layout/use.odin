@@ -6,6 +6,7 @@ import "bred:core/font"
 @(private)
 clear_layout :: proc(state: ^core.EditorState) {
     for &portal in state.portals {
+        if portal.destroy != nil do portal->destroy()
         portal = {}
     }
     clear(&state.portals)

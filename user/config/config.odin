@@ -1,6 +1,7 @@
 package user
 
 import "core:log"
+import "core:strings"
 
 import "bred:builtin/commands"
 import "bred:builtin/components"
@@ -10,16 +11,20 @@ import "bred:core/command"
 import "bred:core/layout"
 import "bred:core/portal"
 
-EDITOR_COMMAND_SET: int
+import "user:file_browser"
+import glo "user:globals"
 
 create_file_portal :: proc(rect: core.Rect) -> (p: core.Portal) {
     p = portal.create_file_portal(rect)
-    p.command_set_id = EDITOR_COMMAND_SET
+    p.command_set_id = glo.CMD_EDITOR
     return
 }
 
 open_default_buffers :: proc(state: ^core.EditorState) {
-    for file_path, index in ([]string{"test.txt", "test2.txt"}) {
+    for file_path, index in ([]string {
+            strings.clone("F:\\GitHub\\editor\\.build\\test.txt"),
+            strings.clone("F:\\GitHub\\editor\\.build\\test2.txt"),
+        }) {
         b, buffer_ok := buffer.load_file(file_path)
         assert(buffer_ok, "Failed to load test file")
         append(&state.buffers, b)
@@ -39,8 +44,8 @@ build_layouts :: proc(state: ^core.EditorState) {
         STATUS_BAR,
     )
 
-    layout.register_layout(state, single_file)
-    layout.register_layout(state, double_file)
+    glo.LAYOUT_SINGLE = layout.register_layout(state, single_file)
+    glo.LAYOUT_DOUBLE = layout.register_layout(state, double_file)
 }
 
 switch_layouts :: proc(state: ^core.EditorState, wildcards: []core.WildcardValue) {
@@ -59,18 +64,25 @@ switch_layouts :: proc(state: ^core.EditorState, wildcards: []core.WildcardValue
     }
 }
 
+open_file_browser :: proc(state: ^core.EditorState, wildcards: []core.WildcardValue) {
+    browser := file_browser.create_file_browser(state)
+    state.portals[state.active_portal] = browser
+}
+
 init :: proc(state: ^core.EditorState) {
     open_default_buffers(state)
     build_layouts(state)
 
-    EDITOR_COMMAND_SET = command.register_command_set(state)
+    glo.CMD_EDITOR = command.register_command_set(state)
+    glo.CMD_FILE_BROWSER = command.register_command_set(state)
 
     command.register(state, command.GLOBAL_SET, {}, {.ESCAPE}, commands.clear_modifiers)
     command.register(state, command.GLOBAL_SET, {.Ctrl}, {.LEFT}, commands.previous_portal)
     command.register(state, command.GLOBAL_SET, {.Ctrl}, {.RIGHT}, commands.next_portal)
-    command.register(state, command.GLOBAL_SET, {.Ctrl}, {.L, .Num}, switch_layouts)
+    command.register(state, command.GLOBAL_SET, {.Ctrl}, {.O}, open_file_browser)
+    command.register(state, command.GLOBAL_SET, {.Alt}, {.L, .Num}, switch_layouts)
 
-    factory := command.factory_create(state, EDITOR_COMMAND_SET)
+    factory := command.factory_create(state, glo.CMD_EDITOR)
     factory->register({.Char}, commands.insert_character)
     factory->register({.LEFT}, commands.move_cursor_left)
     factory->register({.RIGHT}, commands.move_cursor_right)
@@ -106,4 +118,17 @@ init :: proc(state: ^core.EditorState) {
     factory.modifiers = {.Ctrl, .Shift}
     factory->register({.ENTER}, commands.insert_line_above)
     factory->register({.D, .Num, .D}, commands.delete_lines_above)
+
+    factory = command.factory_create(state, glo.CMD_FILE_BROWSER)
+    factory->register({.Char}, file_browser.insert_character)
+    factory->register({.LEFT}, file_browser.move_cursor_left)
+    factory->register({.RIGHT}, file_browser.move_cursor_right)
+    factory->register({.UP}, file_browser.move_cursor_up)
+    factory->register({.DOWN}, file_browser.move_cursor_down)
+    factory->register({.BACKSPACE}, file_browser.delete_behind)
+    factory->register({.DELETE}, file_browser.delete_ahead)
+    factory->register({.ENTER}, file_browser.submit)
+
+    factory.modifiers = {.Shift}
+    factory->register({.Char}, file_browser.insert_character)
 }

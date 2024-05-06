@@ -1,6 +1,8 @@
 package builtin_commands
 
 import "core:log"
+import "core:strings"
+import rl "vendor:raylib"
 
 import "bred:core"
 import "bred:core/buffer"
@@ -208,4 +210,20 @@ jump_to_line_start :: proc(state: ^EditorState, wildcards: []WildcardValue) {
 save :: proc(state: ^EditorState, wildcards: []WildcardValue) {
     active_buffer := get_active_buffer(state)
     buffer.save(active_buffer)
+}
+
+paste_from_system_clipboard :: proc(state: ^EditorState, wildcards: []WildcardValue) {
+    active_buffer := get_active_buffer(state)
+
+    clipboard_content := rl.GetClipboardText()
+    buffer.insert(active_buffer, clipboard_content, active_buffer.cursor.pos)
+}
+
+copy_line_to_system_clipboard :: proc(state: ^EditorState, wildcards: []WildcardValue) {
+    active_buffer := get_active_buffer(state)
+
+    line_bounds := active_buffer.lines[active_buffer.cursor.pos.y]
+    str := buffer.get_range(active_buffer, line_bounds.start, line_bounds.end + 1)
+    cstr, err := strings.clone_to_cstring(str, context.temp_allocator)
+    rl.SetClipboardText(cstr)
 }

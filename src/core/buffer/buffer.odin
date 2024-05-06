@@ -1,11 +1,11 @@
 package buffer
 
-import "bred:core"
-
 import "core:fmt"
 import "core:log"
 import "core:os"
 import "core:strings"
+
+import "bred:core"
 
 @(private)
 Line :: core.Line
@@ -73,6 +73,20 @@ insert_string :: proc(b: ^Buffer, str: string, at: core.Position) {
     if index <= b.cursor.index do move_cursor_horizontal(b, len(str))
 }
 
+insert_cstring :: proc(b: ^Buffer, str: cstring, at: core.Position) {
+    index := pos_to_index(b, at)
+
+    update_text(b, fmt.aprint(b.text[:index], str, b.text[index:], sep = ""))
+
+    if index <= b.cursor.index do move_cursor_horizontal(b, len(str))
+}
+
+insert :: proc {
+    insert_character,
+    insert_string,
+    insert_cstring,
+}
+
 match_indent :: proc(b: ^Buffer, src_line, dest_line: int) {
     delta := get_indent(b, src_line) - get_indent(b, dest_line)
 
@@ -107,6 +121,22 @@ delete_range_index :: proc(b: ^Buffer, start_index, end_index: int) {
 delete_range :: proc {
     delete_range_index,
     delete_range_position,
+}
+
+get_range_position :: proc(b: ^Buffer, start, end: core.Position) -> string {
+    start_index := pos_to_index(b, start)
+    end_index := pos_to_index(b, end)
+
+    return get_range_index(b, start_index, end_index)
+}
+
+get_range_index :: proc(b: ^Buffer, start, end: int) -> string {
+    return b.text[start:end]
+}
+
+get_range :: proc {
+    get_range_index,
+    get_range_position,
 }
 
 get_line_length :: proc(b: ^Buffer, line_idx: int) -> int {

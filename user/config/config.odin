@@ -114,7 +114,8 @@ init :: proc(state: ^core.EditorState) {
     factory->register({.ENTER}, commands.insert_line_below)
     factory->register({.D, .D}, commands.delete_lines_below)
     factory->register({.D, .Num, .D}, commands.delete_lines_below)
-
+    factory->register({.S}, commands.save)
+    
     factory.modifiers = {.Ctrl, .Shift}
     factory->register({.ENTER}, commands.insert_line_above)
     factory->register({.D, .Num, .D}, commands.delete_lines_above)

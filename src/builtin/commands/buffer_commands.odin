@@ -17,7 +17,7 @@ get_active_buffer :: proc(state: ^EditorState, loc := #caller_location) -> ^Buff
     portal := &state.portals[state.active_portal]
 
     assert(portal.buffer != nil, "Buffer command run against non-buffer portal", loc)
-    
+
     return portal.buffer
 }
 
@@ -187,7 +187,7 @@ jump_to_line_end :: proc(state: ^EditorState, wildcards: []WildcardValue) {
 
     buffer.set_cursor_pos(
         active_buffer,
-         {
+        {
             buffer.get_line_length(active_buffer, active_buffer.cursor.pos.y),
             active_buffer.cursor.pos.y,
         },
@@ -203,4 +203,9 @@ jump_to_line_start :: proc(state: ^EditorState, wildcards: []WildcardValue) {
         active_buffer,
         {active_buffer.cursor.pos.x == line_indent ? 0 : line_indent, active_buffer.cursor.pos.y},
     )
+}
+
+save :: proc(state: ^EditorState, wildcards: []WildcardValue) {
+    active_buffer := get_active_buffer(state)
+    buffer.save(active_buffer)
 }

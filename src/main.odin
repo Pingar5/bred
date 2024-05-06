@@ -77,8 +77,8 @@ main :: proc() {
         free_all(context.temp_allocator)
     }
 
-    for b in state.buffers {
-        buffer.save(b)
+    for &b in state.buffers {
+        buffer.save(&b)
     }
 }
 

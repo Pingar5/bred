@@ -40,7 +40,7 @@ load_string :: proc(text: string, allocator := context.allocator) -> (b: Buffer)
     return
 }
 
-save :: proc(b: Buffer) -> bool {
+save :: proc(b: ^Buffer) -> bool {
     if !b.is_dirty do return true
 
     if b.file_path == "" {
@@ -52,6 +52,7 @@ save :: proc(b: Buffer) -> bool {
     if !ok {
         log.error("Failed to write to file")
     }
+    b.is_dirty = false
 
     return ok
 }

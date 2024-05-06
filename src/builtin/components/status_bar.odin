@@ -72,12 +72,21 @@ create_status_bar :: proc(rect: core.Rect) -> core.Portal {
             active_portal := state.portals[state.active_portal]
 
             if active_portal.buffer != nil {
-                font.render_fragment(
+                column := font.render_fragment(
                     active_portal.buffer.file_path,
                     self.rect.start + {18, 0},
                     self.rect.width - 18,
                     rl.GRAY,
                 )
+
+                if active_portal.buffer.is_dirty {
+                    font.render_fragment(
+                        "[*]",
+                        self.rect.start + {18 + column, 0},
+                        self.rect.width - 18 - column,
+                        rl.GRAY,
+                    )
+                }
             }
 
         }

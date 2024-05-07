@@ -7,6 +7,7 @@ import "core:strings"
 import "bred:core"
 import "bred:core/buffer"
 import "bred:core/layout"
+import "bred:util/pool"
 
 import glo "user:globals"
 
@@ -171,29 +172,30 @@ submit :: proc(state: ^EditorState, wildcards: []WildcardValue) {
     } else {
         full_path := strings.concatenate({data.search_path, option})
 
-        file_buffer: ^core.Buffer
-        for &existing_buffer in state.buffers {
+        buffer_id: core.BufferId
+        found_existing: bool = false
+        for existing_buffer in pool.iterate(&state.buffers, auto_cast &buffer_id) {
             if existing_buffer.file_path == full_path {
-                file_buffer = &existing_buffer
+                found_existing = true
                 break
             }
         }
 
-        if file_buffer == nil {
-            b, ok := buffer.load_file(full_path)
+        if !found_existing {
+            id, ref := buffer.create(state)
+            ok := buffer.load_file(ref, full_path)
 
             if !ok {
                 log.errorf("Failed to load file at path:", full_path, "\n")
                 return
             }
 
-            append(&state.buffers, b)
-            file_buffer = &state.buffers[len(state.buffers) - 1]
+            buffer_id = id
         } else {
             delete(full_path)
         }
 
-        data.old_portal.buffer = file_buffer
+        data.old_portal.buffer = buffer_id
 
         browser_portal := state.portals[state.active_portal]
         state.portals[state.active_portal] = data.old_portal

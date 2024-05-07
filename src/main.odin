@@ -9,6 +9,7 @@ import "bred:core/editor"
 import "bred:core/font"
 import "bred:core/layout"
 import "bred:util/logger"
+import "bred:util/pool"
 import "user:config"
 
 import "core:log"
@@ -57,14 +58,14 @@ main :: proc() {
 
     assert(len(state.layouts) > 0, "User configuration must register at least one layout")
     layout.activate_layout(state, 0)
-    
-    state.portals[0].buffer = &state.buffers[0]
+
+    state.portals[0].buffer = auto_cast pool.ResourceId{generation = 1, index = 0}
 
     for !(rl.WindowShouldClose()) {
         if rl.IsWindowResized() {
             layout.resize_layout(state)
         }
-        
+
         editor.update(state)
 
         rl.BeginDrawing()
@@ -77,8 +78,9 @@ main :: proc() {
         free_all(context.temp_allocator)
     }
 
-    for &b in state.buffers {
-        buffer.save(&b)
+    buffer_id: core.BufferId
+    for b in pool.iterate(&state.buffers, auto_cast &buffer_id) {
+        buffer.save(b)
     }
 }
 

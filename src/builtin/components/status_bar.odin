@@ -71,17 +71,17 @@ create_status_bar :: proc(rect: core.Rect) -> core.Portal {
                 )
             }
         } else {
-            active_portal := state.portals[state.active_portal]
+            active_buffer, ok := buffer.get_active_buffer(state)
 
-            if active_portal.buffer != nil {
+            if ok {
                 column := font.render_fragment(
-                    active_portal.buffer.file_path,
+                    active_buffer.file_path,
                     self.rect.start + {18, 0},
                     self.rect.width - 18,
                     rl.GRAY,
                 )
 
-                if active_portal.buffer.is_dirty {
+                if active_buffer.is_dirty {
                     column += font.render_fragment(
                         "[*]",
                         self.rect.start + {18 + column, 0},
@@ -91,7 +91,7 @@ create_status_bar :: proc(rect: core.Rect) -> core.Portal {
                 }
 
                 column += 6
-                undos, redos := history.count(&active_portal.buffer.history)
+                undos, redos := history.count(&active_buffer.history)
                 column += font.render_fragment(
                     fmt.tprintf("<<%d | %d>>", undos, redos),
                     self.rect.start + {18 + column, 0},

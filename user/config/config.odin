@@ -25,9 +25,9 @@ open_default_buffers :: proc(state: ^core.EditorState) {
             strings.clone("F:\\GitHub\\editor\\.build\\test.txt"),
             strings.clone("F:\\GitHub\\editor\\.build\\test2.txt"),
         }) {
-        b, buffer_ok := buffer.load_file(file_path)
-        assert(buffer_ok, "Failed to load test file")
-        append(&state.buffers, b)
+        id, ref := buffer.create(state)
+        load_ok := buffer.load_file(ref, file_path)
+        assert(load_ok, "Failed to load test file")
     }
 }
 
@@ -51,15 +51,17 @@ build_layouts :: proc(state: ^core.EditorState) {
 switch_layouts :: proc(state: ^core.EditorState, wildcards: []core.WildcardValue) {
     layout_id := wildcards[0].(int)
     if layout_id >= len(state.layouts) do return
+    
+    primary_buffer := state.portals[0].buffer
 
     layout.activate_layout(state, layout_id)
 
     switch layout_id {
     case 0:
-        state.portals[0].buffer = &state.buffers[0]
+        state.portals[0].buffer = primary_buffer
     case 1:
-        state.portals[0].buffer = &state.buffers[0]
-        state.portals[1].buffer = &state.buffers[1]
+        state.portals[0].buffer = primary_buffer
+        state.portals[1].buffer = {}
 
     }
 }
@@ -118,6 +120,7 @@ init :: proc(state: ^core.EditorState) {
     factory->register({.V}, commands.paste_from_system_clipboard)
     factory->register({.C}, commands.copy_line_to_system_clipboard)
     factory->register({.Z}, commands.undo)
+    factory->register({.W}, commands.close)
 
     factory.modifiers = {.Ctrl, .Shift}
     factory->register({.ENTER}, commands.insert_line_above)

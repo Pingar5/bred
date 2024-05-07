@@ -25,7 +25,7 @@ is_active_portal :: proc(self: ^Portal, state: ^core.EditorState) -> bool {
 
 create_file_portal :: proc(rect: core.Rect) -> Portal {
     render_file_portal :: proc(self: ^Portal, state: ^core.EditorState) {
-        contents := self.buffer
+        contents, ok := buffer.get_buffer(state, self.buffer)
         data := transmute(^FilePortalData)self.config
 
         font.draw_bg_rect(
@@ -33,7 +33,7 @@ create_file_portal :: proc(rect: core.Rect) -> Portal {
             colors.GUTTER_BACKGROUND,
         )
 
-        if contents == nil do return
+        if !ok do return
 
         for line_offset in 0 ..< self.rect.height {
             screen_line := self.rect.top + line_offset
@@ -74,7 +74,7 @@ create_file_portal :: proc(rect: core.Rect) -> Portal {
         buffer.render(contents, buffer_rect, data.scroll)
         if is_active_portal(self, state) do buffer.render_cursor(contents, buffer_rect, data.scroll)
     }
-    
+
     config := new(FilePortalData)
     config.look_ahead_distance = rect.height / 3
 
@@ -87,11 +87,13 @@ create_file_portal :: proc(rect: core.Rect) -> Portal {
     }
 }
 
-ensure_cursor_visible :: proc(self: ^Portal, move_direction: int) {
-    if self.buffer == nil do return
+ensure_cursor_visible :: proc(state: ^core.EditorState, self: ^Portal, move_direction: int) {
+    contents, ok := buffer.get_buffer(state, self.buffer)
+    if !ok do return
+    
     data := transmute(^FilePortalData)self.config
 
-    cursor_screen_line := self.buffer.cursor.pos.y - data.scroll
+    cursor_screen_line := contents.cursor.pos.y - data.scroll
 
     if move_direction != 0 {
         cursor_screen_line += data.look_ahead_distance * move_direction

@@ -15,29 +15,29 @@ Cursor :: core.Cursor
 @(private)
 Buffer :: core.Buffer
 
-load_file :: proc(file_name: string, allocator := context.allocator) -> (b: Buffer, ok: bool) {
+load_file :: proc(self: ^Buffer, file_name: string, allocator := context.allocator) -> (ok: bool) {
     buffer_data := os.read_entire_file(file_name, context.allocator) or_return
 
-    b = load_string(string(buffer_data), allocator)
+    load_string(self, string(buffer_data), allocator)
 
-    b.file_path = file_name
+    self.file_path = file_name
 
-    return b, true
+    return true
 }
 
-load_string :: proc(text: string, allocator := context.allocator) -> (b: Buffer) {
+load_string :: proc(self: ^Buffer, text: string, allocator := context.allocator) {
     stripped_text, was_alloc := strings.replace_all(text, "\r", "", context.allocator)
     if was_alloc do delete(text)
 
-    b.lines = make([dynamic]Line, 1, allocator)
-    b.text = stripped_text
-    b.history = history.create_history(
-        core.BufferState{text = b.text, cursor_index = 0},
+    self.lines = make([dynamic]Line, 1, allocator)
+    self.text = stripped_text
+    self.history = history.create_history(
+        core.BufferState{text = self.text, cursor_index = 0},
         destroy_buffer_state,
         allocator,
     )
 
-    remap_lines(&b)
+    remap_lines(self)
 
     return
 }

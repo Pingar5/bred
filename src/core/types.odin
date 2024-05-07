@@ -1,15 +1,19 @@
 package core
 
+import "core:log"
 import rl "vendor:raylib"
 
 import "bred:util/history"
+import "bred:util/pool"
 
 ////////////////////
 //     EDITOR     //
 ////////////////////
+BufferId :: distinct u16
+
 EditorState :: struct {
     layouts:        [dynamic]Layout,
-    buffers:        [dynamic]Buffer,
+    buffers:        pool.ResourcePool(Buffer),
     portals:        [dynamic]Portal,
     command_sets:   [dynamic]CommandSet,
     motion_buffer:  MotionBuffer,
@@ -18,8 +22,9 @@ EditorState :: struct {
 }
 
 destroy_editor :: proc(state: ^EditorState) {
-    for b in state.buffers {
-        destroy(b)
+    buffer_id: BufferId
+    for b in pool.iterate(&state.buffers, auto_cast &buffer_id) {
+        destroy(b^)
     }
 
     for layout in state.layouts {
@@ -34,7 +39,7 @@ destroy_editor :: proc(state: ^EditorState) {
         destroy(command_set)
     }
 
-    delete(state.buffers)
+    pool.destroy(&state.buffers)
     delete(state.layouts)
     delete(state.portals)
     delete(state.command_sets)
@@ -71,7 +76,7 @@ Portal :: struct {
     render:         proc(self: ^Portal, state: ^EditorState),
     destroy:        proc(self: ^Portal),
     command_set_id: int,
-    buffer:         ^Buffer,
+    buffer:         BufferId,
     config:         rawptr,
 }
 
@@ -114,7 +119,7 @@ Buffer :: struct {
 destroy_buffer :: proc(b: Buffer) {
     // b.text is destroyed by history
     history.destroy_history(b.history)
-    
+
     delete(b.lines)
     delete(b.file_path)
 }

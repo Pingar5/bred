@@ -7,6 +7,7 @@ import "bred:core"
 import "bred:core/command"
 import "bred:core/motion"
 import "bred:core/portal"
+import "bred:util/pool"
 
 @(private)
 EditorState :: core.EditorState
@@ -14,7 +15,7 @@ EditorState :: core.EditorState
 create :: proc(allocator := context.allocator) -> (state: ^EditorState) {
     state = new(EditorState, allocator)
 
-    state.buffers = make([dynamic]core.Buffer, allocator = allocator)
+    pool.init(&state.buffers, allocator)
 
     return
 }

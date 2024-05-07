@@ -210,9 +210,10 @@ create_file_browser :: proc(state: ^core.EditorState) -> (portal: core.Portal) {
     config.allocator = context.allocator
     config.old_portal = old_portal
 
-    if old_portal.buffer != nil {
-        last_slash := strings.last_index(old_portal.buffer.file_path, "\\")
-        config.search_path = strings.clone(old_portal.buffer.file_path[:last_slash + 1])
+    old_buffer, old_buffer_exists := buffer.get_buffer(state, old_portal.buffer)
+    if old_buffer_exists {
+        last_slash := strings.last_index(old_buffer.file_path, "\\")
+        config.search_path = strings.clone(old_buffer.file_path[:last_slash + 1])
     } else {
         config.search_path = strings.clone("F:\\GitHub\\editor\\")
     }

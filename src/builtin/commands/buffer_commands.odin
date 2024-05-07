@@ -36,6 +36,8 @@ insert_character :: proc(state: ^EditorState, wildcards: []WildcardValue) {
 
         buffer.insert_character(active_buffer, char, active_buffer.cursor.pos)
     }
+
+    buffer.write_to_history(active_buffer)
 }
 
 insert_line :: proc(state: ^EditorState, wildcards: []WildcardValue) {
@@ -43,6 +45,8 @@ insert_line :: proc(state: ^EditorState, wildcards: []WildcardValue) {
 
     buffer.insert_character(active_buffer, byte('\n'), active_buffer.cursor.pos)
     buffer.match_indent(active_buffer, active_buffer.cursor.pos.y - 1, active_buffer.cursor.pos.y)
+
+    buffer.write_to_history(active_buffer)
 }
 
 delete_behind :: proc(state: ^EditorState, wildcards: []WildcardValue) {
@@ -51,12 +55,16 @@ delete_behind :: proc(state: ^EditorState, wildcards: []WildcardValue) {
     if active_buffer.cursor.index == 0 do return
 
     buffer.delete_range(active_buffer, active_buffer.cursor.index - 1, active_buffer.cursor.index)
+
+    buffer.write_to_history(active_buffer)
 }
 
 delete_ahead :: proc(state: ^EditorState, wildcards: []WildcardValue) {
     active_buffer := get_active_buffer(state)
 
     buffer.delete_range(active_buffer, active_buffer.cursor.index, active_buffer.cursor.index + 1)
+
+    buffer.write_to_history(active_buffer)
 }
 
 jump_to_character :: proc(state: ^EditorState, wildcards: []WildcardValue) {
@@ -136,6 +144,8 @@ insert_line_above :: proc(state: ^EditorState, wildcards: []WildcardValue) {
 
     buffer.insert_character(active_buffer, byte('\n'), active_buffer.cursor.pos)
     buffer.match_indent(active_buffer, active_buffer.cursor.pos.y + 1, active_buffer.cursor.pos.y)
+
+    buffer.write_to_history(active_buffer)
 }
 
 insert_line_below :: proc(state: ^EditorState, wildcards: []WildcardValue) {
@@ -146,6 +156,8 @@ insert_line_below :: proc(state: ^EditorState, wildcards: []WildcardValue) {
 
     buffer.insert_character(active_buffer, byte('\n'), active_buffer.cursor.pos)
     buffer.match_indent(active_buffer, active_buffer.cursor.pos.y - 1, active_buffer.cursor.pos.y)
+
+    buffer.write_to_history(active_buffer)
 }
 
 delete_lines_above :: proc(state: ^EditorState, wildcards: []WildcardValue) {
@@ -164,6 +176,8 @@ delete_lines_above :: proc(state: ^EditorState, wildcards: []WildcardValue) {
         {0, max(end_line - (line_count - 1), 0)},
         {buffer.get_line_length(active_buffer, end_line) + 1, end_line},
     )
+
+    buffer.write_to_history(active_buffer)
 }
 
 delete_lines_below :: proc(state: ^EditorState, wildcards: []WildcardValue) {
@@ -182,6 +196,8 @@ delete_lines_below :: proc(state: ^EditorState, wildcards: []WildcardValue) {
         {0, active_buffer.cursor.pos.y},
         {buffer.get_line_length(active_buffer, end_line) + 1, end_line},
     )
+
+    buffer.write_to_history(active_buffer)
 }
 
 jump_to_line_end :: proc(state: ^EditorState, wildcards: []WildcardValue) {
@@ -217,6 +233,8 @@ paste_from_system_clipboard :: proc(state: ^EditorState, wildcards: []WildcardVa
 
     clipboard_content := rl.GetClipboardText()
     buffer.insert(active_buffer, clipboard_content, active_buffer.cursor.pos)
+
+    buffer.write_to_history(active_buffer)
 }
 
 copy_line_to_system_clipboard :: proc(state: ^EditorState, wildcards: []WildcardValue) {
@@ -226,4 +244,14 @@ copy_line_to_system_clipboard :: proc(state: ^EditorState, wildcards: []Wildcard
     str := buffer.get_range(active_buffer, line_bounds.start, line_bounds.end + 1)
     cstr, err := strings.clone_to_cstring(str, context.temp_allocator)
     rl.SetClipboardText(cstr)
+}
+
+undo :: proc(state: ^EditorState, wildcards: []WildcardValue) {
+    active_buffer := get_active_buffer(state)
+    buffer.undo(active_buffer)
+}
+
+redo :: proc(state: ^EditorState, wildcards: []WildcardValue) {
+    active_buffer := get_active_buffer(state)
+    buffer.redo(active_buffer)
 }

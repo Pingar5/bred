@@ -1,5 +1,6 @@
 package components
 
+import "core:fmt"
 import "core:strings"
 import rl "vendor:raylib"
 
@@ -8,6 +9,7 @@ import "bred:core"
 import "bred:core/buffer"
 import "bred:core/font"
 import "bred:util"
+import "bred:util/history"
 
 @(private)
 draw_modifier :: proc(
@@ -80,13 +82,22 @@ create_status_bar :: proc(rect: core.Rect) -> core.Portal {
                 )
 
                 if active_portal.buffer.is_dirty {
-                    font.render_fragment(
+                    column += font.render_fragment(
                         "[*]",
                         self.rect.start + {18 + column, 0},
                         self.rect.width - 18 - column,
                         rl.GRAY,
                     )
                 }
+
+                column += 6
+                undos, redos := history.count(&active_portal.buffer.history)
+                column += font.render_fragment(
+                    fmt.tprintf("<<%d | %d>>", undos, redos),
+                    self.rect.start + {18 + column, 0},
+                    self.rect.width - 18 - column,
+                    rl.GRAY,
+                )
             }
 
         }

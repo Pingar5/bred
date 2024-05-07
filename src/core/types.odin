@@ -2,6 +2,8 @@ package core
 
 import rl "vendor:raylib"
 
+import "bred:util/history"
+
 ////////////////////
 //     EDITOR     //
 ////////////////////
@@ -95,6 +97,11 @@ Cursor :: struct {
     virtual_column: int,
 }
 
+BufferState :: struct {
+    text:         string,
+    cursor_index: int,
+}
+
 Buffer :: struct {
     file_path: string,
     is_dirty:  bool,
@@ -102,10 +109,13 @@ Buffer :: struct {
     cursor:    Cursor,
     lines:     [dynamic]Line,
     scroll:    int,
+    history:   history.History(BufferState),
 }
 
 destroy_buffer :: proc(b: Buffer) {
-    delete(b.text)
+    // b.text is destroyed by history
+    history.destroy_history(b.history)
+    
     delete(b.lines)
     delete(b.file_path)
 }

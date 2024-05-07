@@ -3,6 +3,7 @@ package buffer
 import "core:log"
 
 import "bred:core"
+import "bred:util/history"
 
 LOOK_AHEAD_DISTANCE :: 15
 
@@ -31,6 +32,8 @@ set_cursor_index :: proc(b: ^Buffer, new_index: int) {
         b.cursor.index = 0
         b.cursor.pos = {0, 0}
     }
+
+    history.get_ref(&b.history).cursor_index = b.cursor.index
 }
 
 set_cursor_pos :: proc(b: ^Buffer, new_pos: core.Position) {
@@ -38,6 +41,7 @@ set_cursor_pos :: proc(b: ^Buffer, new_pos: core.Position) {
     b.cursor.pos.x = clamp(new_pos.x, 0, get_line_length(b, b.cursor.pos.y))
 
     b.cursor.index = pos_to_index(b, b.cursor.pos)
+    history.get_ref(&b.history).cursor_index = b.cursor.index
 }
 
 move_cursor_horizontal :: proc(b: ^Buffer, distance: int) {

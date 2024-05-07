@@ -117,10 +117,12 @@ init :: proc(state: ^core.EditorState) {
     factory->register({.S}, commands.save)
     factory->register({.V}, commands.paste_from_system_clipboard)
     factory->register({.C}, commands.copy_line_to_system_clipboard)
-    
+    factory->register({.Z}, commands.undo)
+
     factory.modifiers = {.Ctrl, .Shift}
     factory->register({.ENTER}, commands.insert_line_above)
     factory->register({.D, .Num, .D}, commands.delete_lines_above)
+    factory->register({.Z}, commands.redo)
 
     factory = command.factory_create(state, glo.CMD_FILE_BROWSER)
     factory->register({.Char}, file_browser.insert_character)

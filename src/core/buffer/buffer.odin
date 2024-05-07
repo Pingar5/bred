@@ -6,6 +6,7 @@ import "core:os"
 import "core:strings"
 
 import "bred:core"
+import "bred:util/history"
 
 @(private)
 Line :: core.Line
@@ -13,10 +14,6 @@ Line :: core.Line
 Cursor :: core.Cursor
 @(private)
 Buffer :: core.Buffer
-
-create_empty :: proc(allocator := context.allocator) -> Buffer {
-    return {lines = make([dynamic]Line, 1, allocator)}
-}
 
 load_file :: proc(file_name: string, allocator := context.allocator) -> (b: Buffer, ok: bool) {
     buffer_data := os.read_entire_file(file_name, context.allocator) or_return
@@ -32,8 +29,13 @@ load_string :: proc(text: string, allocator := context.allocator) -> (b: Buffer)
     stripped_text, was_alloc := strings.replace_all(text, "\r", "", context.allocator)
     if was_alloc do delete(text)
 
-    b = create_empty(allocator)
+    b.lines = make([dynamic]Line, 1, allocator)
     b.text = stripped_text
+    b.history = history.create_history(
+        core.BufferState{text = b.text, cursor_index = 0},
+        destroy_buffer_state,
+        allocator,
+    )
 
     remap_lines(&b)
 
@@ -169,8 +171,6 @@ index_to_pos :: proc(b: ^Buffer, index: int, loc := #caller_location) -> core.Po
 
 @(private)
 update_text :: proc(b: ^Buffer, new_text: string) {
-    delete(b.text)
-
     b.text = new_text
     b.is_dirty = true
 
@@ -223,4 +223,30 @@ get_indent :: proc(b: ^Buffer, line_idx: int) -> (indent: int) {
     }
 
     return
+}
+
+write_to_history :: proc(b: ^Buffer) {
+    history.write(&b.history, core.BufferState{text = b.text, cursor_index = b.cursor.index})
+}
+
+undo :: proc(b: ^Buffer) -> bool {
+    state := history.undo(&b.history) or_return
+
+    update_text(b, state.text)
+    set_cursor_index(b, state.cursor_index)
+
+    return true
+}
+
+redo :: proc(b: ^Buffer) -> bool {
+    state := history.redo(&b.history) or_return
+
+    update_text(b, state.text)
+    set_cursor_index(b, state.cursor_index)
+
+    return true
+}
+
+destroy_buffer_state :: proc(state: core.BufferState) {
+    delete(state.text)
 }

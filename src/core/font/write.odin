@@ -13,6 +13,8 @@ render_fragment :: proc(
 ) -> (
     consumed_length: int,
 ) {
+    if max_length <= 0 do return 0
+
     visible := len(fragment) < max_length ? fragment : fragment[:max_length]
     write(pos, visible, color)
     return len(visible)
@@ -23,7 +25,7 @@ write :: proc(pos: core.Position, text: string, color: rl.Color) -> (ending_colu
     rl.DrawTextEx(
         ACTIVE_FONT.font,
         c_text,
-         {
+        {
             f32(i32(pos.x) * ACTIVE_FONT.character_size.x),
             f32(i32(pos.y) * ACTIVE_FONT.character_size.y),
         },

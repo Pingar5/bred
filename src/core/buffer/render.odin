@@ -5,11 +5,11 @@ import "bred:core/font"
 
 import rl "vendor:raylib"
 
-render_cursor :: proc(b: ^Buffer, rect: core.Rect) {
+render_cursor :: proc(b: ^Buffer, rect: core.Rect, scroll: int) {
     line := b.lines[b.cursor.pos.y]
 
     column := min(b.cursor.pos.x, line.end - line.start)
-    portal_line := b.cursor.pos.y - b.scroll
+    portal_line := b.cursor.pos.y - scroll
 
     if column >= rect.width || portal_line >= rect.height || portal_line < 0 do return
 
@@ -17,7 +17,7 @@ render_cursor :: proc(b: ^Buffer, rect: core.Rect) {
 
     when ODIN_DEBUG {
         index_pos := index_to_pos(b, b.cursor.index)
-        index_screen_pos := index_pos + {rect.left, rect.top - b.scroll}
+        index_screen_pos := index_pos + {rect.left, rect.top - scroll}
         rl.DrawRectangleLines(
             font.ACTIVE_FONT.character_size.x * i32(index_screen_pos.x),
             font.ACTIVE_FONT.character_size.y * i32(index_screen_pos.y),
@@ -37,10 +37,10 @@ render_cursor :: proc(b: ^Buffer, rect: core.Rect) {
     }
 }
 
-render :: proc(b: ^Buffer, rect: core.Rect) {
+render :: proc(b: ^Buffer, rect: core.Rect, scroll: int) {
     for line_offset in 0 ..< rect.height {
         screen_line := rect.top + line_offset
-        buffer_line := b.scroll + line_offset
+        buffer_line := scroll + line_offset
 
         if buffer_line >= len(b.lines) do break
 

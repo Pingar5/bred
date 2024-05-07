@@ -6,6 +6,7 @@ import rl "vendor:raylib"
 
 import "bred:core"
 import "bred:core/buffer"
+import "bred:core/portal"
 
 @(private)
 EditorState :: core.EditorState
@@ -87,6 +88,7 @@ move_cursor_up :: proc(state: ^EditorState, wildcards: []WildcardValue) {
     }
 
     buffer.move_cursor_vertical(active_buffer, -distance)
+    portal.ensure_cursor_visible(&state.portals[state.active_portal], -1)
 }
 
 move_cursor_down :: proc(state: ^EditorState, wildcards: []WildcardValue) {
@@ -100,6 +102,7 @@ move_cursor_down :: proc(state: ^EditorState, wildcards: []WildcardValue) {
     }
 
     buffer.move_cursor_vertical(active_buffer, distance)
+    portal.ensure_cursor_visible(&state.portals[state.active_portal], 1)
 }
 
 move_cursor_left :: proc(state: ^EditorState, wildcards: []WildcardValue) {
@@ -113,6 +116,7 @@ move_cursor_left :: proc(state: ^EditorState, wildcards: []WildcardValue) {
     }
 
     buffer.move_cursor_horizontal(active_buffer, -distance)
+    portal.ensure_cursor_visible(&state.portals[state.active_portal], 0)
 }
 
 move_cursor_right :: proc(state: ^EditorState, wildcards: []WildcardValue) {
@@ -126,14 +130,17 @@ move_cursor_right :: proc(state: ^EditorState, wildcards: []WildcardValue) {
     }
 
     buffer.move_cursor_horizontal(active_buffer, distance)
+    portal.ensure_cursor_visible(&state.portals[state.active_portal], 0)
 }
 
 page_up :: proc(state: ^EditorState, wildcards: []WildcardValue) {
     buffer.move_cursor_vertical(get_active_buffer(state), -15)
+    portal.ensure_cursor_visible(&state.portals[state.active_portal], -1)
 }
 
 page_down :: proc(state: ^EditorState, wildcards: []WildcardValue) {
     buffer.move_cursor_vertical(get_active_buffer(state), 15)
+    portal.ensure_cursor_visible(&state.portals[state.active_portal], 1)
 }
 
 insert_line_above :: proc(state: ^EditorState, wildcards: []WildcardValue) {

@@ -13,6 +13,11 @@ import rl "vendor:raylib"
 @(private = "file")
 Portal :: core.Portal
 
+FilePortalData :: struct {
+    scroll:              int,
+    look_ahead_distance: int,
+}
+
 is_active_portal :: proc(self: ^Portal, state: ^core.EditorState) -> bool {
     active_portal := &state.portals[state.active_portal]
     return self == active_portal
@@ -21,6 +26,7 @@ is_active_portal :: proc(self: ^Portal, state: ^core.EditorState) -> bool {
 create_file_portal :: proc(rect: core.Rect) -> Portal {
     render_file_portal :: proc(self: ^Portal, state: ^core.EditorState) {
         contents := self.buffer
+        data := transmute(^FilePortalData)self.config
 
         font.draw_bg_rect(
             {components = {self.rect.left, self.rect.top, 3, self.rect.height}},
@@ -31,7 +37,7 @@ create_file_portal :: proc(rect: core.Rect) -> Portal {
 
         for line_offset in 0 ..< self.rect.height {
             screen_line := self.rect.top + line_offset
-            buffer_line := contents.scroll + line_offset
+            buffer_line := data.scroll + line_offset
 
             if buffer_line >= len(contents.lines) do break
 
@@ -65,9 +71,41 @@ create_file_portal :: proc(rect: core.Rect) -> Portal {
             },
         }
 
-        buffer.render(contents, buffer_rect)
-        if is_active_portal(self, state) do buffer.render_cursor(contents, buffer_rect)
+        buffer.render(contents, buffer_rect, data.scroll)
+        if is_active_portal(self, state) do buffer.render_cursor(contents, buffer_rect, data.scroll)
+    }
+    
+    config := new(FilePortalData)
+    config.look_ahead_distance = rect.height / 3
+
+    return {
+        type = "editor",
+        rect = rect,
+        render = render_file_portal,
+        destroy = destroy_file_portal,
+        config = config,
+    }
+}
+
+ensure_cursor_visible :: proc(self: ^Portal, move_direction: int) {
+    if self.buffer == nil do return
+    data := transmute(^FilePortalData)self.config
+
+    cursor_screen_line := self.buffer.cursor.pos.y - data.scroll
+
+    if move_direction != 0 {
+        cursor_screen_line += data.look_ahead_distance * move_direction
     }
 
-    return {type = "editor", rect = rect, render = render_file_portal}
+    if cursor_screen_line > self.rect.height {
+        data.scroll += cursor_screen_line - self.rect.height
+    } else if cursor_screen_line < 0 {
+        data.scroll += cursor_screen_line
+        data.scroll = max(data.scroll, 0)
+    }
+}
+
+destroy_file_portal :: proc(self: ^Portal) {
+    data := transmute(^FilePortalData)self.config
+    free(data)
 }

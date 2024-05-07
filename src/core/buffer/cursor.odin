@@ -7,23 +7,6 @@ import "bred:util/history"
 
 LOOK_AHEAD_DISTANCE :: 15
 
-@(private)
-ensure_cursor_visible :: proc(b: ^Buffer, move_direction: int) {
-    // visible_line_count := get_visible_line_count(b)
-    // cursor_screen_line := b.cursor.pos.y - b.scroll
-
-    // if move_direction != 0 {
-    //     cursor_screen_line += LOOK_AHEAD_DISTANCE * move_direction
-    // }
-
-    // if cursor_screen_line > visible_line_count {
-    //     b.scroll += cursor_screen_line - visible_line_count
-    // } else if cursor_screen_line < 0 {
-    //     b.scroll += cursor_screen_line
-    //     b.scroll = max(b.scroll, 0)
-    // }
-}
-
 set_cursor_index :: proc(b: ^Buffer, new_index: int) {
     if len(b.text) > 0 {
         b.cursor.index = clamp(new_index, 0, len(b.text))
@@ -65,8 +48,6 @@ page_up :: proc(b: ^Buffer) {
     new_line_bounds := b.lines[b.cursor.pos.y]
     b.cursor.pos.x = min(b.cursor.virtual_column, get_line_length(b, b.cursor.pos.y))
     b.cursor.index = new_line_bounds.start + b.cursor.pos.x
-
-    ensure_cursor_visible(b, -1)
 }
 
 page_down :: proc(b: ^Buffer) {
@@ -76,6 +57,4 @@ page_down :: proc(b: ^Buffer) {
     new_line_bounds := b.lines[b.cursor.pos.y]
     b.cursor.pos.x = min(b.cursor.virtual_column, get_line_length(b, b.cursor.pos.y))
     b.cursor.index = new_line_bounds.start + b.cursor.pos.x
-
-    ensure_cursor_visible(b, 1)
 }

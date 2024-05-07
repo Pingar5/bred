@@ -108,7 +108,6 @@ Buffer :: struct {
     text:      string,
     cursor:    Cursor,
     lines:     [dynamic]Line,
-    scroll:    int,
     history:   history.History(BufferState),
 }
 

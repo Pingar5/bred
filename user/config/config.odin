@@ -49,9 +49,14 @@ build_layouts :: proc(state: ^core.EditorState) {
 }
 
 switch_layouts :: proc(state: ^core.EditorState, wildcards: []core.WildcardValue) -> bool {
+    command.validate_wildcards(wildcards, {.Num}, "switch_layouts") or_return
+
     layout_id := wildcards[0].(int)
-    if layout_id >= len(state.layouts) do return false
-    
+    if layout_id >= len(state.layouts) {
+        log.errorf("%d is not a valid layout id", layout_id)
+        return false
+    }
+
     primary_buffer := state.portals[0].buffer
 
     layout.activate_layout(state, layout_id)
@@ -63,11 +68,11 @@ switch_layouts :: proc(state: ^core.EditorState, wildcards: []core.WildcardValue
         state.portals[0].buffer = primary_buffer
         state.portals[1].buffer = {}
     }
-    
+
     return true
 }
 
-open_file_browser :: proc(state: ^core.EditorState, wildcards: []core.WildcardValue) -> bool {
+open_file_browser :: proc(state: ^core.EditorState, _: []core.WildcardValue) -> bool {
     browser := file_browser.create_file_browser(state)
     state.portals[state.active_portal] = browser
     return true

@@ -284,3 +284,51 @@ parse_wildcards :: proc(
 
     return values[:]
 }
+
+validate_wildcards :: proc(
+    received: []core.WildcardValue,
+    expected: []core.Wildcard,
+    command_name := "Command",
+    repeat_pattern := false,
+    allow_fewer := false,
+) -> bool {
+    if len(received) < len(expected) && !allow_fewer {
+        log.errorf(
+            "%s expected at least %d wildcards and only received %d\n",
+            command_name,
+            len(expected),
+            len(received),
+        )
+        return false
+    }
+
+    for value, i in received {
+        if i >= len(expected) && !repeat_pattern do break
+
+        switch expected[i % len(expected)] {
+        case .Char:
+            _, is_char := value.(byte)
+            if !is_char {
+                log.errorf(
+                    "%s expected a Wildcard.Char in slot %d but received %v\n",
+                    command_name,
+                    i,
+                    value,
+                )
+            }
+        case .Num:
+            _, is_num := value.(int)
+            if !is_num {
+                log.errorf(
+                    "%s expected a Wildcard.Num in slot %d but received %v\n",
+                    command_name,
+                    i,
+                    value,
+                )
+            }
+        }
+
+    }
+
+    return true
+}

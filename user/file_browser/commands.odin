@@ -6,6 +6,7 @@ import "core:strings"
 
 import "bred:core"
 import "bred:core/buffer"
+import "bred:core/command"
 import "bred:core/layout"
 import "bred:util/pool"
 
@@ -17,12 +18,10 @@ EditorState :: core.EditorState
 WildcardValue :: core.WildcardValue
 
 @(private = "file")
-get_active_browser :: proc(state: ^EditorState, loc := #caller_location) -> ^FileBrowserData {
+get_active_browser :: proc(state: ^EditorState, loc := #caller_location) -> (^FileBrowserData, bool) {
     portal := &state.portals[state.active_portal]
 
-    assert(portal.config != nil, "Browser command run against non-browser portal", loc)
-
-    return auto_cast portal.config
+    return auto_cast portal.config, portal.config != nil
 }
 
 @(private = "file")
@@ -69,13 +68,17 @@ move_cursor_vertical :: proc(data: ^FileBrowserData, distance: int) {
 }
 
 insert_character :: proc(state: ^EditorState, wildcards: []WildcardValue) -> bool {
-    assert(len(wildcards) > 0, "insert_character requires at least one Wildcard.Char in it's path")
+    command.validate_wildcards(
+        wildcards,
+        {.Char},
+        "insert_character",
+        repeat_pattern = true,
+    ) or_return
 
-    data := get_active_browser(state)
+    data := get_active_browser(state) or_return
 
     for wildcard in wildcards {
-        char, is_char := wildcard.(byte)
-        assert(is_char, "insert_character command can only accept Wildchar.Char values")
+        char, _ := wildcard.(byte)
 
         if char == 0 do continue
 
@@ -93,91 +96,76 @@ insert_character :: proc(state: ^EditorState, wildcards: []WildcardValue) -> boo
 
     if !strings.contains(data.options[data.selection], data.query) do move_cursor_vertical(data, 1)
     if !strings.contains(data.options[data.selection], data.query) do move_cursor_vertical(data, -1)
-    
+
     return true
 }
 
-delete_behind :: proc(state: ^EditorState, wildcards: []WildcardValue) -> bool {
-    data := get_active_browser(state)
+delete_behind :: proc(state: ^EditorState, _: []WildcardValue) -> bool {
+    data := get_active_browser(state) or_return
 
     if data.cursor_index == 0 do return false
 
     delete_range(data, data.cursor_index - 1, data.cursor_index)
-    
+
     return true
 }
 
-delete_ahead :: proc(state: ^EditorState, wildcards: []WildcardValue) -> bool {
-    data := get_active_browser(state)
+delete_ahead :: proc(state: ^EditorState, _: []WildcardValue) -> bool {
+    data := get_active_browser(state) or_return
 
     delete_range(data, data.cursor_index, data.cursor_index + 1)
-    
+
     return true
 }
 
 move_cursor_left :: proc(state: ^EditorState, wildcards: []WildcardValue) -> bool {
-    data := get_active_browser(state)
+    command.validate_wildcards(wildcards, {.Num}, "move_cursor_left", allow_fewer = true) or_return
+    data := get_active_browser(state) or_return
 
-    distance := 1
-    if len(wildcards) > 0 {
-        is_int: bool
-        distance, is_int = wildcards[0].(int)
-        assert(is_int, "move_cursor_left command can only accept a Wildcard.Num")
-    }
-
+    distance := len(wildcards) > 0 ? wildcards[0].(int) : 1
     move_cursor_horizontal(data, -distance)
-    
+
     return true
 }
 
 move_cursor_right :: proc(state: ^EditorState, wildcards: []WildcardValue) -> bool {
-    data := get_active_browser(state)
+    command.validate_wildcards(
+        wildcards,
+        {.Num},
+        "move_cursor_right",
+        allow_fewer = true,
+    ) or_return
+    data := get_active_browser(state) or_return
 
-    distance := 1
-    if len(wildcards) > 0 {
-        is_int: bool
-        distance, is_int = wildcards[0].(int)
-        assert(is_int, "move_cursor_right command can only accept a Wildcard.Num")
-    }
-
+    distance := len(wildcards) > 0 ? wildcards[0].(int) : 1
     move_cursor_horizontal(data, distance)
-    
+
     return true
 }
 
 
 move_cursor_up :: proc(state: ^EditorState, wildcards: []WildcardValue) -> bool {
-    data := get_active_browser(state)
+    command.validate_wildcards(wildcards, {.Num}, "move_cursor_up", allow_fewer = true) or_return
+    data := get_active_browser(state) or_return
 
-    distance := 1
-    if len(wildcards) > 0 {
-        is_int: bool
-        distance, is_int = wildcards[0].(int)
-        assert(is_int, "move_cursor_up command can only accept a Wildcard.Num")
-    }
-
+    distance := len(wildcards) > 0 ? wildcards[0].(int) : 1
     move_cursor_vertical(data, -distance)
-    
+
     return true
 }
 
 move_cursor_down :: proc(state: ^EditorState, wildcards: []WildcardValue) -> bool {
-    data := get_active_browser(state)
+    command.validate_wildcards(wildcards, {.Num}, "move_cursor_down", allow_fewer = true) or_return
+    data := get_active_browser(state) or_return
 
-    distance := 1
-    if len(wildcards) > 0 {
-        is_int: bool
-        distance, is_int = wildcards[0].(int)
-        assert(is_int, "move_cursor_down command can only accept a Wildcard.Num")
-    }
-
+    distance := len(wildcards) > 0 ? wildcards[0].(int) : 1
     move_cursor_vertical(data, distance)
-    
+
     return true
 }
 
-submit :: proc(state: ^EditorState, wildcards: []WildcardValue) -> bool {
-    data := get_active_browser(state)
+submit :: proc(state: ^EditorState, _: []WildcardValue) -> bool {
+    data := get_active_browser(state) or_return
 
     option := data.options[data.selection]
     last_char := option[len(option) - 1]
@@ -215,6 +203,6 @@ submit :: proc(state: ^EditorState, wildcards: []WildcardValue) -> bool {
         state.portals[state.active_portal] = data.old_portal
         browser_portal->destroy()
     }
-    
+
     return true
 }

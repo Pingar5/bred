@@ -4,12 +4,12 @@ import "core:log"
 
 import "bred:core/editor"
 
-next_portal :: proc(state: ^EditorState, wildcards: []WildcardValue) -> bool {
+next_portal :: proc(state: ^EditorState, _: []WildcardValue) -> bool {
     editor.next_portal(state)
     return true
 }
 
-previous_portal :: proc(state: ^EditorState, wildcards: []WildcardValue) -> bool {
+previous_portal :: proc(state: ^EditorState, _: []WildcardValue) -> bool {
     editor.previous_portal(state)
     return true
 }

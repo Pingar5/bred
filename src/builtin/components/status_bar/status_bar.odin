@@ -89,15 +89,6 @@ create_status_bar :: proc(rect: core.Rect) -> core.Portal {
                         rl.GRAY,
                     )
                 }
-
-                column += 6
-                undos, redos := history.count(&active_buffer.history)
-                column += font.render_fragment(
-                    fmt.tprintf("<<%d | %d>>", undos, redos),
-                    self.rect.start + {18 + column, 0},
-                    self.rect.width - 18 - column,
-                    rl.GRAY,
-                )
             }
 
         }

@@ -121,7 +121,7 @@ init :: proc(state: ^core.EditorState) {
         // Here we pull a file path from the application's arguments to open as a buffer
         assert(len(os.args) >= 2, "Must provide file path to open as application argument")
         buffer_id, ref := buffer.create(state)
-        
+
         // The buffer takes ownership of the file_path upon loading
         load_ok := buffer.load_file(ref, strings.clone(os.args[1]))
         assert(load_ok, "Failed to load test file")

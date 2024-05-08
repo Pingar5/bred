@@ -44,7 +44,7 @@ render :: proc(b: ^Buffer, rect: core.Rect, scroll: int) {
 
         if buffer_line >= len(b.lines) do break
 
-        remaining_length := font.render_fragment(
+        font.render_fragment(
             get_line_str(b, buffer_line),
             {rect.left, screen_line},
             rect.width,

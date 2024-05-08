@@ -1,7 +1,5 @@
 package status_bar
 
-import "core:fmt"
-import "core:strings"
 import rl "vendor:raylib"
 
 import "bred:colors"
@@ -9,7 +7,6 @@ import "bred:core"
 import "bred:core/buffer"
 import "bred:core/font"
 import "bred:util"
-import "bred:util/history"
 
 @(private)
 draw_modifier :: proc(
@@ -58,7 +55,6 @@ create_status_bar :: proc(rect: core.Rect) -> core.Portal {
 
         motion_buffer := &state.motion_buffer
         if motion_buffer.keys_length > 0 {
-            column := 18
             for key_idx in 0 ..< motion_buffer.keys_length {
                 key := motion_buffer.keys[key_idx]
                 key_str := util.key_to_str(key)
@@ -74,7 +70,7 @@ create_status_bar :: proc(rect: core.Rect) -> core.Portal {
             active_buffer, ok := buffer.get_active_buffer(state)
 
             if ok {
-                column := font.render_fragment(
+                column = font.render_fragment(
                     active_buffer.file_path,
                     self.rect.start + {18, 0},
                     self.rect.width - 18,

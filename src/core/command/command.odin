@@ -3,7 +3,6 @@ package command
 import "bred:core"
 import "bred:util"
 
-import "core:fmt"
 import "core:log"
 import "core:slice"
 import "core:strings"
@@ -249,7 +248,7 @@ parse_wildcards :: proc(
         }
     } else {
         motion_key: int
-        for path_key, path_index in path {
+        for path_key in path {
             wildcard, is_wildcard := path_key.(core.Wildcard)
 
             if !is_wildcard {

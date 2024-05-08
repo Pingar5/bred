@@ -1,12 +1,8 @@
 package editor
 
-import "core:log"
-import rl "vendor:raylib"
-
 import "bred:core"
 import "bred:core/command"
 import "bred:core/motion"
-import "bred:core/portal"
 import "bred:util/pool"
 
 @(private)
@@ -39,7 +35,7 @@ update :: proc(state: ^EditorState) {
 }
 
 render :: proc(state: ^EditorState) {
-    for &p, index in state.portals {
+    for &p in state.portals {
         p->render(state)
     }
 }

@@ -7,7 +7,6 @@ import rl "vendor:raylib"
 import "bred:core"
 import "bred:core/buffer"
 import "bred:core/command"
-import "bred:core/portal"
 
 @(private)
 EditorState :: core.EditorState
@@ -261,6 +260,9 @@ copy_line_to_system_clipboard :: proc(state: ^EditorState, _: []WildcardValue) -
     line_bounds := active_buffer.lines[active_buffer.cursor.pos.y]
     str := buffer.get_range(active_buffer, line_bounds.start, line_bounds.end + 1)
     cstr, err := strings.clone_to_cstring(str, context.temp_allocator)
+    
+    if err != .None do return false
+    
     rl.SetClipboardText(cstr)
 
     return true

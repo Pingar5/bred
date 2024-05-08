@@ -128,7 +128,7 @@ destroy_buffer :: proc(b: Buffer) {
 ////////////////////
 //    COMMANDS    //
 ////////////////////
-CommandProc :: proc(editor_state: ^EditorState, wildcards: []WildcardValue)
+CommandProc :: proc(editor_state: ^EditorState, wildcards: []WildcardValue) -> bool
 
 Wildcard :: enum {
     Num,

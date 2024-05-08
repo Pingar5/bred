@@ -16,18 +16,16 @@ WildcardValue :: core.WildcardValue
 Buffer :: core.Buffer
 
 @(private)
-get_active_buffer :: proc(state: ^EditorState, loc := #caller_location) -> ^Buffer {
+get_active_buffer :: proc(state: ^EditorState, loc := #caller_location) -> (^Buffer, bool) {
     active_buffer, ok := buffer.get_active_buffer(state)
-
-    assert(ok, "Buffer command run without an active buffer", loc)
-
-    return active_buffer
+    if !ok do log.error("Buffer command run without an active buffer\n", location = loc)
+    return active_buffer, ok
 }
 
-insert_character :: proc(state: ^EditorState, wildcards: []WildcardValue) {
+insert_character :: proc(state: ^EditorState, wildcards: []WildcardValue) -> bool {
     assert(len(wildcards) > 0, "insert_character requires at least one Wildcard.Char in it's path")
 
-    active_buffer := get_active_buffer(state)
+    active_buffer := get_active_buffer(state) or_return
 
     for wildcard in wildcards {
         char, is_char := wildcard.(byte)
@@ -39,46 +37,56 @@ insert_character :: proc(state: ^EditorState, wildcards: []WildcardValue) {
     }
 
     buffer.write_to_history(active_buffer)
+    
+    return true
 }
 
-insert_line :: proc(state: ^EditorState, wildcards: []WildcardValue) {
-    active_buffer := get_active_buffer(state)
+insert_line :: proc(state: ^EditorState, wildcards: []WildcardValue) -> bool {
+    active_buffer := get_active_buffer(state) or_return
 
     buffer.insert_character(active_buffer, byte('\n'), active_buffer.cursor.pos)
     buffer.match_indent(active_buffer, active_buffer.cursor.pos.y - 1, active_buffer.cursor.pos.y)
 
     buffer.write_to_history(active_buffer)
+    
+    return true
 }
 
-delete_behind :: proc(state: ^EditorState, wildcards: []WildcardValue) {
-    active_buffer := get_active_buffer(state)
+delete_behind :: proc(state: ^EditorState, wildcards: []WildcardValue) -> bool {
+    active_buffer := get_active_buffer(state) or_return
 
-    if active_buffer.cursor.index == 0 do return
+    if active_buffer.cursor.index == 0 do return false
 
     buffer.delete_range(active_buffer, active_buffer.cursor.index - 1, active_buffer.cursor.index)
 
     buffer.write_to_history(active_buffer)
+    
+    return true
 }
 
-delete_ahead :: proc(state: ^EditorState, wildcards: []WildcardValue) {
-    active_buffer := get_active_buffer(state)
+delete_ahead :: proc(state: ^EditorState, wildcards: []WildcardValue) -> bool {
+    active_buffer := get_active_buffer(state) or_return
 
     buffer.delete_range(active_buffer, active_buffer.cursor.index, active_buffer.cursor.index + 1)
 
     buffer.write_to_history(active_buffer)
+    
+    return true
 }
 
-jump_to_character :: proc(state: ^EditorState, wildcards: []WildcardValue) {
+jump_to_character :: proc(state: ^EditorState, wildcards: []WildcardValue) -> bool {
     assert(
         len(wildcards) == 1,
         "jump_to_character requires exactly one Wildcard.Char in it's path",
     )
 
     log.debugf("Jumping to %v\n", rune(wildcards[0].(byte)))
+    
+    return false
 }
 
-move_cursor_up :: proc(state: ^EditorState, wildcards: []WildcardValue) {
-    active_buffer := get_active_buffer(state)
+move_cursor_up :: proc(state: ^EditorState, wildcards: []WildcardValue) -> bool {
+    active_buffer := get_active_buffer(state) or_return
 
     distance := 1
     if len(wildcards) > 0 {
@@ -89,10 +97,12 @@ move_cursor_up :: proc(state: ^EditorState, wildcards: []WildcardValue) {
 
     buffer.move_cursor_vertical(active_buffer, -distance)
     portal.ensure_cursor_visible(state, &state.portals[state.active_portal], -1)
+    
+    return true
 }
 
-move_cursor_down :: proc(state: ^EditorState, wildcards: []WildcardValue) {
-    active_buffer := get_active_buffer(state)
+move_cursor_down :: proc(state: ^EditorState, wildcards: []WildcardValue) -> bool {
+    active_buffer := get_active_buffer(state) or_return
 
     distance := 1
     if len(wildcards) > 0 {
@@ -103,10 +113,12 @@ move_cursor_down :: proc(state: ^EditorState, wildcards: []WildcardValue) {
 
     buffer.move_cursor_vertical(active_buffer, distance)
     portal.ensure_cursor_visible(state, &state.portals[state.active_portal], 1)
+    
+    return true
 }
 
-move_cursor_left :: proc(state: ^EditorState, wildcards: []WildcardValue) {
-    active_buffer := get_active_buffer(state)
+move_cursor_left :: proc(state: ^EditorState, wildcards: []WildcardValue) -> bool {
+    active_buffer := get_active_buffer(state) or_return
 
     distance := 1
     if len(wildcards) > 0 {
@@ -117,10 +129,12 @@ move_cursor_left :: proc(state: ^EditorState, wildcards: []WildcardValue) {
 
     buffer.move_cursor_horizontal(active_buffer, -distance)
     portal.ensure_cursor_visible(state, &state.portals[state.active_portal], 0)
+    
+    return true
 }
 
-move_cursor_right :: proc(state: ^EditorState, wildcards: []WildcardValue) {
-    active_buffer := get_active_buffer(state)
+move_cursor_right :: proc(state: ^EditorState, wildcards: []WildcardValue) -> bool {
+    active_buffer := get_active_buffer(state) or_return
 
     distance := 1
     if len(wildcards) > 0 {
@@ -131,20 +145,26 @@ move_cursor_right :: proc(state: ^EditorState, wildcards: []WildcardValue) {
 
     buffer.move_cursor_horizontal(active_buffer, distance)
     portal.ensure_cursor_visible(state, &state.portals[state.active_portal], 0)
+    
+    return true
 }
 
-page_up :: proc(state: ^EditorState, wildcards: []WildcardValue) {
-    buffer.move_cursor_vertical(get_active_buffer(state), -15)
+page_up :: proc(state: ^EditorState, wildcards: []WildcardValue) -> bool {
+    buffer.move_cursor_vertical(get_active_buffer(state) or_return, -15)
     portal.ensure_cursor_visible(state, &state.portals[state.active_portal], -1)
+    
+    return true
 }
 
-page_down :: proc(state: ^EditorState, wildcards: []WildcardValue) {
-    buffer.move_cursor_vertical(get_active_buffer(state), 15)
+page_down :: proc(state: ^EditorState, wildcards: []WildcardValue) -> bool {
+    buffer.move_cursor_vertical(get_active_buffer(state) or_return, 15)
     portal.ensure_cursor_visible(state, &state.portals[state.active_portal], 1)
+    
+    return true
 }
 
-insert_line_above :: proc(state: ^EditorState, wildcards: []WildcardValue) {
-    active_buffer := get_active_buffer(state)
+insert_line_above :: proc(state: ^EditorState, wildcards: []WildcardValue) -> bool {
+    active_buffer := get_active_buffer(state) or_return
 
     current_line_bounds := active_buffer.lines[active_buffer.cursor.pos.y - 1]
     buffer.set_cursor_index(active_buffer, current_line_bounds.end)
@@ -153,10 +173,12 @@ insert_line_above :: proc(state: ^EditorState, wildcards: []WildcardValue) {
     buffer.match_indent(active_buffer, active_buffer.cursor.pos.y + 1, active_buffer.cursor.pos.y)
 
     buffer.write_to_history(active_buffer)
+    
+    return true
 }
 
-insert_line_below :: proc(state: ^EditorState, wildcards: []WildcardValue) {
-    active_buffer := get_active_buffer(state)
+insert_line_below :: proc(state: ^EditorState, wildcards: []WildcardValue) -> bool {
+    active_buffer := get_active_buffer(state) or_return
 
     current_line_bounds := active_buffer.lines[active_buffer.cursor.pos.y]
     buffer.set_cursor_index(active_buffer, current_line_bounds.end)
@@ -165,10 +187,12 @@ insert_line_below :: proc(state: ^EditorState, wildcards: []WildcardValue) {
     buffer.match_indent(active_buffer, active_buffer.cursor.pos.y - 1, active_buffer.cursor.pos.y)
 
     buffer.write_to_history(active_buffer)
+    
+    return true
 }
 
-delete_lines_above :: proc(state: ^EditorState, wildcards: []WildcardValue) {
-    active_buffer := get_active_buffer(state)
+delete_lines_above :: proc(state: ^EditorState, wildcards: []WildcardValue) -> bool {
+    active_buffer := get_active_buffer(state) or_return
 
     line_count := 1
     if len(wildcards) > 0 {
@@ -185,10 +209,12 @@ delete_lines_above :: proc(state: ^EditorState, wildcards: []WildcardValue) {
     )
 
     buffer.write_to_history(active_buffer)
+    
+    return true
 }
 
-delete_lines_below :: proc(state: ^EditorState, wildcards: []WildcardValue) {
-    active_buffer := get_active_buffer(state)
+delete_lines_below :: proc(state: ^EditorState, wildcards: []WildcardValue) -> bool {
+    active_buffer := get_active_buffer(state) or_return
 
     line_count := 1
     if len(wildcards) > 0 {
@@ -205,10 +231,12 @@ delete_lines_below :: proc(state: ^EditorState, wildcards: []WildcardValue) {
     )
 
     buffer.write_to_history(active_buffer)
+    
+    return true
 }
 
-jump_to_line_end :: proc(state: ^EditorState, wildcards: []WildcardValue) {
-    active_buffer := get_active_buffer(state)
+jump_to_line_end :: proc(state: ^EditorState, wildcards: []WildcardValue) -> bool {
+    active_buffer := get_active_buffer(state) or_return
 
     buffer.set_cursor_pos(
         active_buffer,
@@ -217,10 +245,12 @@ jump_to_line_end :: proc(state: ^EditorState, wildcards: []WildcardValue) {
             active_buffer.cursor.pos.y,
         },
     )
+    
+    return true
 }
 
-jump_to_line_start :: proc(state: ^EditorState, wildcards: []WildcardValue) {
-    active_buffer := get_active_buffer(state)
+jump_to_line_start :: proc(state: ^EditorState, wildcards: []WildcardValue) -> bool {
+    active_buffer := get_active_buffer(state) or_return
 
     line_indent := buffer.get_indent(active_buffer, active_buffer.cursor.pos.y)
 
@@ -228,42 +258,56 @@ jump_to_line_start :: proc(state: ^EditorState, wildcards: []WildcardValue) {
         active_buffer,
         {active_buffer.cursor.pos.x == line_indent ? 0 : line_indent, active_buffer.cursor.pos.y},
     )
+    
+    return true
 }
 
-save :: proc(state: ^EditorState, wildcards: []WildcardValue) {
-    active_buffer := get_active_buffer(state)
+save :: proc(state: ^EditorState, wildcards: []WildcardValue) -> bool {
+    active_buffer := get_active_buffer(state) or_return
     buffer.save(active_buffer)
+    
+    return true
 }
 
-paste_from_system_clipboard :: proc(state: ^EditorState, wildcards: []WildcardValue) {
-    active_buffer := get_active_buffer(state)
+paste_from_system_clipboard :: proc(state: ^EditorState, wildcards: []WildcardValue) -> bool {
+    active_buffer := get_active_buffer(state) or_return
 
     clipboard_content := rl.GetClipboardText()
     buffer.insert(active_buffer, clipboard_content, active_buffer.cursor.pos)
 
     buffer.write_to_history(active_buffer)
+    
+    return true
 }
 
-copy_line_to_system_clipboard :: proc(state: ^EditorState, wildcards: []WildcardValue) {
-    active_buffer := get_active_buffer(state)
+copy_line_to_system_clipboard :: proc(state: ^EditorState, wildcards: []WildcardValue) -> bool {
+    active_buffer := get_active_buffer(state) or_return
 
     line_bounds := active_buffer.lines[active_buffer.cursor.pos.y]
     str := buffer.get_range(active_buffer, line_bounds.start, line_bounds.end + 1)
     cstr, err := strings.clone_to_cstring(str, context.temp_allocator)
     rl.SetClipboardText(cstr)
+    
+    return true
 }
 
-undo :: proc(state: ^EditorState, wildcards: []WildcardValue) {
-    active_buffer := get_active_buffer(state)
+undo :: proc(state: ^EditorState, wildcards: []WildcardValue) -> bool {
+    active_buffer := get_active_buffer(state) or_return
     buffer.undo(active_buffer)
+    
+    return true
 }
 
-redo :: proc(state: ^EditorState, wildcards: []WildcardValue) {
-    active_buffer := get_active_buffer(state)
+redo :: proc(state: ^EditorState, wildcards: []WildcardValue) -> bool {
+    active_buffer := get_active_buffer(state) or_return
     buffer.redo(active_buffer)
+    
+    return true
 }
 
-close :: proc(state: ^EditorState, wildcards: []WildcardValue) {
+close :: proc(state: ^EditorState, wildcards: []WildcardValue) -> bool {
     active_portal := &state.portals[state.active_portal]
     buffer.close_buffer(state, active_portal.buffer)
+    
+    return true
 }

@@ -48,9 +48,9 @@ build_layouts :: proc(state: ^core.EditorState) {
     glo.LAYOUT_DOUBLE = layout.register_layout(state, double_file)
 }
 
-switch_layouts :: proc(state: ^core.EditorState, wildcards: []core.WildcardValue) {
+switch_layouts :: proc(state: ^core.EditorState, wildcards: []core.WildcardValue) -> bool {
     layout_id := wildcards[0].(int)
-    if layout_id >= len(state.layouts) do return
+    if layout_id >= len(state.layouts) do return false
     
     primary_buffer := state.portals[0].buffer
 
@@ -62,13 +62,15 @@ switch_layouts :: proc(state: ^core.EditorState, wildcards: []core.WildcardValue
     case 1:
         state.portals[0].buffer = primary_buffer
         state.portals[1].buffer = {}
-
     }
+    
+    return true
 }
 
-open_file_browser :: proc(state: ^core.EditorState, wildcards: []core.WildcardValue) {
+open_file_browser :: proc(state: ^core.EditorState, wildcards: []core.WildcardValue) -> bool {
     browser := file_browser.create_file_browser(state)
     state.portals[state.active_portal] = browser
+    return true
 }
 
 init :: proc(state: ^core.EditorState) {

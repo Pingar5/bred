@@ -68,7 +68,7 @@ move_cursor_vertical :: proc(data: ^FileBrowserData, distance: int) {
     }
 }
 
-insert_character :: proc(state: ^EditorState, wildcards: []WildcardValue) {
+insert_character :: proc(state: ^EditorState, wildcards: []WildcardValue) -> bool {
     assert(len(wildcards) > 0, "insert_character requires at least one Wildcard.Char in it's path")
 
     data := get_active_browser(state)
@@ -93,23 +93,29 @@ insert_character :: proc(state: ^EditorState, wildcards: []WildcardValue) {
 
     if !strings.contains(data.options[data.selection], data.query) do move_cursor_vertical(data, 1)
     if !strings.contains(data.options[data.selection], data.query) do move_cursor_vertical(data, -1)
+    
+    return true
 }
 
-delete_behind :: proc(state: ^EditorState, wildcards: []WildcardValue) {
+delete_behind :: proc(state: ^EditorState, wildcards: []WildcardValue) -> bool {
     data := get_active_browser(state)
 
-    if data.cursor_index == 0 do return
+    if data.cursor_index == 0 do return false
 
     delete_range(data, data.cursor_index - 1, data.cursor_index)
+    
+    return true
 }
 
-delete_ahead :: proc(state: ^EditorState, wildcards: []WildcardValue) {
+delete_ahead :: proc(state: ^EditorState, wildcards: []WildcardValue) -> bool {
     data := get_active_browser(state)
 
     delete_range(data, data.cursor_index, data.cursor_index + 1)
+    
+    return true
 }
 
-move_cursor_left :: proc(state: ^EditorState, wildcards: []WildcardValue) {
+move_cursor_left :: proc(state: ^EditorState, wildcards: []WildcardValue) -> bool {
     data := get_active_browser(state)
 
     distance := 1
@@ -120,9 +126,11 @@ move_cursor_left :: proc(state: ^EditorState, wildcards: []WildcardValue) {
     }
 
     move_cursor_horizontal(data, -distance)
+    
+    return true
 }
 
-move_cursor_right :: proc(state: ^EditorState, wildcards: []WildcardValue) {
+move_cursor_right :: proc(state: ^EditorState, wildcards: []WildcardValue) -> bool {
     data := get_active_browser(state)
 
     distance := 1
@@ -133,10 +141,12 @@ move_cursor_right :: proc(state: ^EditorState, wildcards: []WildcardValue) {
     }
 
     move_cursor_horizontal(data, distance)
+    
+    return true
 }
 
 
-move_cursor_up :: proc(state: ^EditorState, wildcards: []WildcardValue) {
+move_cursor_up :: proc(state: ^EditorState, wildcards: []WildcardValue) -> bool {
     data := get_active_browser(state)
 
     distance := 1
@@ -147,9 +157,11 @@ move_cursor_up :: proc(state: ^EditorState, wildcards: []WildcardValue) {
     }
 
     move_cursor_vertical(data, -distance)
+    
+    return true
 }
 
-move_cursor_down :: proc(state: ^EditorState, wildcards: []WildcardValue) {
+move_cursor_down :: proc(state: ^EditorState, wildcards: []WildcardValue) -> bool {
     data := get_active_browser(state)
 
     distance := 1
@@ -160,9 +172,11 @@ move_cursor_down :: proc(state: ^EditorState, wildcards: []WildcardValue) {
     }
 
     move_cursor_vertical(data, distance)
+    
+    return true
 }
 
-submit :: proc(state: ^EditorState, wildcards: []WildcardValue) {
+submit :: proc(state: ^EditorState, wildcards: []WildcardValue) -> bool {
     data := get_active_browser(state)
 
     option := data.options[data.selection]
@@ -187,7 +201,7 @@ submit :: proc(state: ^EditorState, wildcards: []WildcardValue) {
 
             if !ok {
                 log.errorf("Failed to load file at path:", full_path, "\n")
-                return
+                return false
             }
 
             buffer_id = id
@@ -201,4 +215,6 @@ submit :: proc(state: ^EditorState, wildcards: []WildcardValue) {
         state.portals[state.active_portal] = data.old_portal
         browser_portal->destroy()
     }
+    
+    return true
 }

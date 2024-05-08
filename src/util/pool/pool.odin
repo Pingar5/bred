@@ -49,6 +49,8 @@ add :: proc(pool: ^ResourcePool($T), val: T) -> (id: ResourceId) {
 }
 
 get :: proc(pool: ^ResourcePool($T), id: ResourceId) -> (val: ^T, ok: bool) {
+    if int(id.index) >= len(pool.resources) do return nil, false
+    
     slot := &pool.resources[id.index]
 
     if slot.generation == id.generation {
@@ -59,6 +61,8 @@ get :: proc(pool: ^ResourcePool($T), id: ResourceId) -> (val: ^T, ok: bool) {
 }
 
 remove :: proc(pool: ^ResourcePool($T), id: ResourceId) -> (ok: bool) {
+    if int(id.index) >= len(pool.resources) do return false
+    
     slot := &pool.resources[id.index]
 
     if slot.generation > id.generation do return false

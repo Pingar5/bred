@@ -4,8 +4,6 @@ import "bred:core"
 
 import rl "vendor:raylib"
 
-FONT_SIZE :: 24
-
 Font :: struct {
     font:           rl.Font,
     character_size: [2]i32,
@@ -21,16 +19,16 @@ quit :: proc() {
     delete(CODEPOINTS)
 }
 
-load :: proc(file_name: cstring) {
+load :: proc(file_name: cstring, size: i32) {
     if ACTIVE_FONT != {} do unload()
 
     ACTIVE_FONT.font = rl.LoadFontEx(
         file_name,
-        FONT_SIZE,
+        size,
         raw_data(CODEPOINTS),
         i32(len(CODEPOINTS)),
     )
-    ACTIVE_FONT.size = FONT_SIZE
+    ACTIVE_FONT.size = f32(size)
 
     character_size := rl.MeasureTextEx(ACTIVE_FONT.font, " ", ACTIVE_FONT.size, 0)
     ACTIVE_FONT.character_size = {i32(character_size.x), i32(character_size.y)}
@@ -41,6 +39,8 @@ unload :: proc() {
 }
 
 calculate_window_dims :: proc() -> core.Position {
+    assert(ACTIVE_FONT != {}, "Cannot calculate window dims before a font is loaded")
+    
     screen_width, screen_height := rl.GetScreenWidth(), rl.GetScreenHeight()
     return(
          {

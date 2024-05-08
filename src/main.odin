@@ -46,8 +46,6 @@ main :: proc() {
     font.init()
     defer font.quit()
 
-    font.load("CodeNewRomanNerdFontMono-Regular.otf")
-
     state := editor.create()
     defer core.destroy(state)
 
@@ -55,6 +53,7 @@ main :: proc() {
 
     config.init(state)
 
+    assert(font.ACTIVE_FONT != {}, "User configuration must load a font")
     assert(len(state.portals) > 0, "User configuration must create at least one portal")
 
     state.portals[0].buffer = auto_cast pool.ResourceId{generation = 1, index = 0}

@@ -8,6 +8,7 @@ import "bred:core"
 // bred:core's sub-modules are where actual behavior is defined for the core types
 import "bred:core/buffer"
 import "bred:core/command"
+import "bred:core/font"
 import "bred:core/layout"
 import "bred:core/portal"
 // bred:builtin provides a few builtin in tools to help you create your configuration faster
@@ -23,6 +24,11 @@ CMD_FILE: int
 // The init function is called on editor start-up
 // This is where you should initialize your layouts, command sets, and keybindings
 init :: proc(state: ^core.EditorState) {
+    // Currently bred only supports displaying the entire screen with one font at one size
+    // This is where we load our font of choice. This path is relative to the executable
+    // The size is in pixels
+    font.load("CodeNewRomanNerdFontMono-Regular.otf", 36)
+
     {     // --- LAYOUT CREATION ---
         // The layout type is a discriminated union of core.PortalDefinition & core.Split
         // PortalDefinitions are just functions that take a core.Rect and construct a core.Portal

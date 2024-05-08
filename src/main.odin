@@ -55,8 +55,7 @@ main :: proc() {
 
     config.init(state)
 
-    assert(len(state.layouts) > 0, "User configuration must register at least one layout")
-    layout.activate_layout(state, 0)
+    assert(len(state.portals) > 0, "User configuration must create at least one portal")
 
     state.portals[0].buffer = auto_cast pool.ResourceId{generation = 1, index = 0}
 

@@ -1,4 +1,4 @@
-package components
+package status_bar
 
 import "core:fmt"
 import "core:strings"

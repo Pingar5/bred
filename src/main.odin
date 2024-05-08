@@ -1,6 +1,5 @@
 package main
 
-import "bred:builtin/components"
 import "bred:colors"
 import "bred:core"
 import "bred:core/buffer"

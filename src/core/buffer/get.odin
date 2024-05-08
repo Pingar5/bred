@@ -1,7 +1,5 @@
 package buffer
 
-import "core:log"
-
 import "bred:core"
 import "bred:util/pool"
 

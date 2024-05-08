@@ -1,6 +1,6 @@
 @ECHO OFF
 
-odin build src -out:.build/editor.exe -debug -collection:bred=src -collection:user=user -strict-style
+odin build src -out:.build/editor.exe -debug -collection:bred=src -collection:user=user -strict-style -vet
 
 if %errorlevel% NEQ 0 exit /b %errorlevel%
 

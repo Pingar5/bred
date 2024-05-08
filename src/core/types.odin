@@ -1,6 +1,5 @@
 package core
 
-import "core:log"
 import rl "vendor:raylib"
 
 import "bred:util/history"

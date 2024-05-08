@@ -1,7 +1,5 @@
 package history
 
-import "core:log"
-
 import "base:runtime"
 
 @(private)

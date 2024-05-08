@@ -1,7 +1,5 @@
 package builtin_commands
 
-import "core:log"
-
 import "bred:core/motion"
 
 clear_modifiers :: proc(state: ^EditorState, _: []WildcardValue) -> bool {

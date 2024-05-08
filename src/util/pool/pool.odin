@@ -1,6 +1,5 @@
 package pool
 
-import "core:log"
 import "core:slice"
 
 ResourceId :: bit_field u16 {

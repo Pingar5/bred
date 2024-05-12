@@ -82,10 +82,22 @@ delete_ahead :: proc(state: ^EditorState, _: []WildcardValue) -> bool {
 
 jump_to_character :: proc(state: ^EditorState, wildcards: []WildcardValue) -> bool {
     command.validate_wildcards(wildcards, {.Char}, "jump_to_character") or_return
+    active_buffer := get_active_buffer(state) or_return
 
-    log.debugf("Jumping to %v\n", rune(wildcards[0].(byte)))
+    index := strings.index_byte(active_buffer.text[active_buffer.cursor.index + 1:], wildcards[0].(byte))
+    buffer.set_cursor_index(active_buffer, active_buffer.cursor.index + index + 1)
 
-    return false
+    return true
+}
+
+jump_back_to_character :: proc(state: ^EditorState, wildcards: []WildcardValue) -> bool {
+    command.validate_wildcards(wildcards, {.Char}, "jump_to_character") or_return
+    active_buffer := get_active_buffer(state) or_return
+
+    index := strings.last_index_byte(active_buffer.text[:active_buffer.cursor.index], wildcards[0].(byte))
+    buffer.set_cursor_index(active_buffer, index)
+
+    return true
 }
 
 move_cursor_up :: proc(state: ^EditorState, wildcards: []WildcardValue) -> bool {

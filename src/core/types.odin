@@ -107,12 +107,13 @@ BufferState :: struct {
 }
 
 Buffer :: struct {
-    file_path: string,
-    is_dirty:  bool,
-    text:      string,
-    cursor:    Cursor,
-    lines:     [dynamic]Line,
-    history:   history.History(BufferState),
+    file_path:          string,
+    is_dirty:           bool,
+    text:               string,
+    cursor:             Cursor,
+    lines:              [dynamic]Line,
+    history:            history.History(BufferState),
+    open_history_state: BufferState,
 }
 
 destroy_buffer :: proc(b: Buffer) {

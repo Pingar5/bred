@@ -75,6 +75,8 @@ insert_character :: proc(b: ^Buffer, r: byte, at: core.Position) {
     update_text(b, fmt.aprint(b.text[:index], rune(r), b.text[index:], sep = ""))
     update_tree(b, index, 0, 1)
 
+    bake_highlighting(b)
+
     if index <= b.cursor.index do move_cursor_horizontal(b, 1)
 }
 
@@ -84,6 +86,8 @@ insert_string :: proc(b: ^Buffer, str: string, at: core.Position) {
     update_text(b, fmt.aprint(b.text[:index], str, b.text[index:], sep = ""))
     update_tree(b, index, 0, len(str))
 
+    bake_highlighting(b)
+
     if index <= b.cursor.index do move_cursor_horizontal(b, len(str))
 }
 
@@ -92,6 +96,8 @@ insert_cstring :: proc(b: ^Buffer, str: cstring, at: core.Position) {
 
     update_text(b, fmt.aprint(b.text[:index], str, b.text[index:], sep = ""))
     update_tree(b, index, 0, len(str))
+
+    bake_highlighting(b)
 
     if index <= b.cursor.index do move_cursor_horizontal(b, len(str))
 }
@@ -131,6 +137,8 @@ delete_range_index :: proc(b: ^Buffer, start_index, end_index: int) {
 
     update_text(b, fmt.aprint(b.text[:start_index], b.text[end_index:], sep = ""))
     update_tree(b, start_index, end_index - start_index, 0)
+
+    bake_highlighting(b)
     set_cursor_index(b, new_index)
 }
 
@@ -262,6 +270,8 @@ undo :: proc(b: ^Buffer) -> bool {
         update_tree(b, edit.start, edit.new_length, edit.old_length)
     }
 
+    bake_highlighting(b)
+
     return true
 }
 
@@ -274,6 +284,8 @@ redo :: proc(b: ^Buffer) -> bool {
     for edit in state.edits {
         update_tree(b, edit.start, edit.old_length, edit.new_length)
     }
+
+    bake_highlighting(b)
 
     return true
 }
@@ -305,8 +317,6 @@ update_tree :: proc(b: ^Buffer, at: int, old_length: int, new_length: int) {
         b.text,
     )
     ts.delete_tree(old_tree)
-
-    bake_highlighting(b)
 }
 
 bake_highlighting :: proc(b: ^Buffer) {

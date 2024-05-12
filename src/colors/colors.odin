@@ -6,7 +6,6 @@ Color :: rl.Color
 
 BACKGROUND := hex(0x2b2b2b)
 TEXT :: rl.WHITE
-ESCAPED_CHARACTER :: rl.GRAY
 
 GUTTER_BACKGROUND :: rl.Color{34, 34, 36, 255}
 

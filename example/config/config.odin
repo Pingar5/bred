@@ -116,8 +116,8 @@ init :: proc(state: ^core.EditorState) {
         factory->register({.Num, .J}, file_editor.move_cursor_down)
 
         // Bred's buffers have native undo/redo support. However, note that if you create commands that
-        // alter the buffer, you have to call buffer.write_to_history after making your edits for those edits
-        // to work with the undo/redo system
+        // alter the buffer, you have to call buffer.start_history_state before making your edits &
+        // buffer.write_to_history after making your edits for those edits to work with the undo/redo system
         factory->register({.Z}, commands.undo)
         factory->register({.Z}, commands.redo, {.Shift})
     }

@@ -225,8 +225,17 @@ get_indent :: proc(b: ^Buffer, line_idx: int) -> (indent: int) {
     return
 }
 
+start_history_state :: proc(b: ^Buffer) {
+    b.open_history_state = {
+        edits = make([dynamic]core.BufferEdit),
+    }
+}
+
 write_to_history :: proc(b: ^Buffer) {
-    history.write(&b.history, core.BufferState{text = b.text, cursor_index = b.cursor.index})
+    b.open_history_state.cursor_index = b.cursor.index
+    b.open_history_state.text = b.text
+    history.write(&b.history, b.open_history_state)
+    b.open_history_state = {}
 }
 
 undo :: proc(b: ^Buffer) -> bool {

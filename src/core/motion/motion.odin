@@ -12,7 +12,7 @@ import "bred:core/command"
 @(private) ModifierState :: core.ModifierState
 @(private) Modifiers :: core.Modifiers
 
-MOD_HOLD_MINIMUM :: 0.15
+MOD_HOLD_MINIMUM :: 0.3
 COMMAND_TIMEOUT :: 1
 
 SKIP_KEYS :: []rl.KeyboardKey {

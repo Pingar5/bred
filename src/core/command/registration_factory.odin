@@ -11,6 +11,7 @@ RegistrationFactoryMethods :: struct {
         path: CommandPath,
         command: core.CommandProc,
         additional_modifiers: core.Modifiers = {},
+        keep_as_last_motion := true,
     ),
 }
 
@@ -38,6 +39,7 @@ factory_register :: proc(
     path: CommandPath,
     command: core.CommandProc,
     additional_modifiers: core.Modifiers = {},
+    keep_as_last_motion := true,
 ) {
     register(
         factory.state,
@@ -45,6 +47,7 @@ factory_register :: proc(
         factory.modifiers + additional_modifiers,
         path,
         command,
+        keep_as_last_motion,
         factory.allocator,
     )
 }

@@ -19,20 +19,25 @@ create :: proc(allocator := context.allocator) -> (state: ^EditorState) {
 update :: proc(state: ^EditorState) {
     motions := motion.tick(state)
 
-    active_portal := state.portals[state.active_portal]
-
     for motion in motions {
-        listing, found := command.get_commands(state, active_portal.command_set_id, motion)
-
-        if !found {
-            listing, found = command.get_commands(state, command.GLOBAL_SET, motion)
-        }
-
-        if !found do return
-        if listing.procedure == nil do continue
-
-        listing.procedure(state, command.parse_wildcards(motion, listing.path))
+        dispatch_motion(state, motion)
     }
+}
+
+dispatch_motion :: proc(state: ^EditorState, m: core.Motion) {
+    active_portal := state.portals[state.active_portal]
+    listing, found := command.get_commands(state, active_portal.command_set_id, m)
+
+    if !found {
+        listing, found = command.get_commands(state, command.GLOBAL_SET, m)
+    }
+
+    if !found do return
+    if listing.procedure == nil do return
+
+    listing.procedure(state, command.parse_wildcards(m, listing.path))
+    
+    if listing.keep_as_last_motion do motion.store_motion(m, &state.last_motion)
 }
 
 render :: proc(state: ^EditorState) {

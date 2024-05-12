@@ -175,6 +175,7 @@ register :: proc(
     modifiers: core.Modifiers,
     path: CommandPath,
     command: core.CommandProc,
+    keep_as_last_motion := true,
     allocator := context.allocator,
 ) {
     set := get_command_set(state, set_id)
@@ -189,7 +190,7 @@ register :: proc(
         )
     }
 
-    node.command = {command, slice.clone(path, allocator)}
+    node.command = {command, slice.clone(path, allocator), keep_as_last_motion}
 }
 
 is_leaf_or_invalid :: proc(

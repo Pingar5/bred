@@ -11,3 +11,8 @@ previous_portal :: proc(state: ^EditorState, _: []WildcardValue) -> bool {
     editor.previous_portal(state)
     return true
 }
+
+repeat_command :: proc(state: ^EditorState, _: []WildcardValue) -> bool {
+    editor.dispatch_motion(state, state.last_motion.motion)
+    return true
+}

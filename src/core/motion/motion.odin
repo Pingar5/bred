@@ -7,10 +7,14 @@ import rl "vendor:raylib"
 import "bred:core"
 import "bred:core/command"
 
-@(private) MotionBuffer :: core.MotionBuffer
-@(private) Motion :: core.Motion
-@(private) ModifierState :: core.ModifierState
-@(private) Modifiers :: core.Modifiers
+@(private)
+MotionBuffer :: core.MotionBuffer
+@(private)
+Motion :: core.Motion
+@(private)
+ModifierState :: core.ModifierState
+@(private)
+Modifiers :: core.Modifiers
 
 MOD_HOLD_MINIMUM :: 0.3
 COMMAND_TIMEOUT :: 1
@@ -119,4 +123,13 @@ update_modifier :: proc(mod: ^ModifierState, left, right: rl.KeyboardKey) {
             mod.locked = false
         }
     }
+}
+
+store_motion :: proc(motion: Motion, into: ^core.BackedMotion) {
+    copy(into.chars_backing[:], motion.chars)
+    copy(into.keys_backing[:], motion.keys)
+    
+    into.motion.chars = into.chars_backing[:len(motion.chars)]
+    into.motion.keys = into.keys_backing[:len(motion.keys)]
+    into.motion.modifiers = motion.modifiers
 }

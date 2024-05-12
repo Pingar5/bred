@@ -18,6 +18,7 @@ EditorState :: struct {
     portals:        [dynamic]Portal,
     command_sets:   [dynamic]CommandSet,
     motion_buffer:  MotionBuffer,
+    last_motion:    BackedMotion,
     active_portal:  int,
     current_layout: int,
 }
@@ -171,8 +172,9 @@ CommandTreeNode :: struct {
 }
 
 CommandListing :: struct {
-    procedure: CommandProc,
-    path:      CommandPath,
+    procedure:           CommandProc,
+    path:                CommandPath,
+    keep_as_last_motion: bool,
 }
 
 CommandSet :: struct {
@@ -215,6 +217,12 @@ Modifier :: enum {
     Alt,
 }
 Modifiers :: bit_set[Modifier;u8]
+
+BackedMotion :: struct {
+    keys_backing:  [16]rl.KeyboardKey,
+    chars_backing: [16]byte,
+    motion:        Motion,
+}
 
 Motion :: struct {
     modifiers: Modifiers,

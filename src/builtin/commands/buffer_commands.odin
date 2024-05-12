@@ -162,12 +162,13 @@ insert_line_above :: proc(state: ^EditorState, _: []WildcardValue) -> bool {
     
     buffer.start_history_state(active_buffer)
 
-    current_line_bounds := active_buffer.lines[active_buffer.cursor.pos.y - 1]
-    buffer.set_cursor_index(active_buffer, current_line_bounds.end)
+    current_line_bounds := active_buffer.lines[active_buffer.cursor.pos.y]
+    buffer.set_cursor_index(active_buffer, current_line_bounds.start)
 
     buffer.insert_character(active_buffer, byte('\n'), active_buffer.cursor.pos)
+    buffer.move_cursor_vertical(active_buffer, -1)
     buffer.match_indent(active_buffer, active_buffer.cursor.pos.y + 1, active_buffer.cursor.pos.y)
-
+    
     buffer.write_to_history(active_buffer)
 
     return true

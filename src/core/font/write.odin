@@ -56,3 +56,13 @@ draw_cell_outline :: proc(pos: core.Position, color: rl.Color) {
         color,
     )
 }
+
+draw_outline_rect :: proc(rect: core.Rect, color: rl.Color) {
+    rl.DrawRectangleLines(
+        ACTIVE_FONT.character_size.x * i32(rect.left),
+        ACTIVE_FONT.character_size.y * i32(rect.top),
+        ACTIVE_FONT.character_size.x * i32(rect.width),
+        ACTIVE_FONT.character_size.y * i32(rect.height),
+        color,
+    )
+}

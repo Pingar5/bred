@@ -29,6 +29,7 @@ update :: proc(state: ^EditorState) {
         }
 
         if !found do return
+        if listing.procedure == nil do continue
 
         listing.procedure(state, command.parse_wildcards(motion, listing.path))
     }

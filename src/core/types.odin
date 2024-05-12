@@ -2,6 +2,8 @@ package core
 
 import rl "vendor:raylib"
 
+import ts "bred:lib/treesitter"
+import "bred:lib/treesitter/highlight"
 import "bred:util/history"
 import "bred:util/pool"
 
@@ -101,9 +103,20 @@ Cursor :: struct {
     virtual_column: int,
 }
 
+Fragment :: struct {
+    start, end: int,
+    line_index: int,
+    highlight:  highlight.Highlight,
+}
+
+BufferEdit :: struct {
+    start, old_length, new_length: int,
+}
+
 BufferState :: struct {
     text:         string,
     cursor_index: int,
+    edits:        [dynamic]BufferEdit,
 }
 
 Buffer :: struct {
@@ -113,7 +126,10 @@ Buffer :: struct {
     cursor:             Cursor,
     lines:              [dynamic]Line,
     history:            history.History(BufferState),
+    syntax_tree:        ts.Tree,
     open_history_state: BufferState,
+    fragments:          [dynamic]Fragment,
+    language_id:        int,
 }
 
 destroy_buffer :: proc(b: Buffer) {
@@ -122,6 +138,8 @@ destroy_buffer :: proc(b: Buffer) {
 
     delete(b.lines)
     delete(b.file_path)
+    delete(b.fragments)
+    ts.delete_tree(b.syntax_tree)
 }
 
 

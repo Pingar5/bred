@@ -1,5 +1,6 @@
 package buffer
 
+import "bred:colors"
 import "bred:core"
 import "bred:core/font"
 
@@ -37,7 +38,7 @@ render_cursor :: proc(b: ^Buffer, rect: core.Rect, scroll: int) {
     }
 }
 
-render :: proc(b: ^Buffer, rect: core.Rect, scroll: int) {
+render_by_lines :: proc(b: ^Buffer, rect: core.Rect, scroll: int) {
     for line_offset in 0 ..< rect.height {
         screen_line := rect.top + line_offset
         buffer_line := scroll + line_offset
@@ -50,5 +51,38 @@ render :: proc(b: ^Buffer, rect: core.Rect, scroll: int) {
             rect.width,
             rl.WHITE,
         )
+    }
+}
+
+render_by_fragments :: proc(b: ^Buffer, rect: core.Rect, scroll: int) {
+    prev_line := -1
+    column := 0
+    for fragment in b.fragments {
+        if fragment.line_index < scroll do continue
+
+        if fragment.line_index != prev_line {
+            column = 0
+            prev_line = fragment.line_index
+
+            if (fragment.line_index - scroll) > rect.height do break
+        }
+
+        columns_consumed := font.render_fragment(
+            b.text[fragment.start:fragment.end],
+            {rect.left + column, rect.top + fragment.line_index - scroll},
+            rect.width - column,
+            colors.THEME[fragment.highlight.theme_index].color,
+        )
+
+        column += columns_consumed
+    }
+}
+
+
+render :: proc(b: ^Buffer, rect: core.Rect, scroll: int) {
+    if len(b.fragments) == 0 {
+        render_by_lines(b, rect, scroll)
+    } else {
+        render_by_fragments(b, rect, scroll)
     }
 }

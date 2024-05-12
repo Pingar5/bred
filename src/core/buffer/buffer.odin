@@ -6,6 +6,8 @@ import "core:os"
 import "core:strings"
 
 import "bred:core"
+import ts "bred:lib/treesitter"
+import "bred:lib/treesitter/highlight"
 import "bred:util/history"
 
 @(private)
@@ -17,6 +19,9 @@ Buffer :: core.Buffer
 
 load_file :: proc(self: ^Buffer, file_name: string, allocator := context.allocator) -> (ok: bool) {
     buffer_data := os.read_entire_file(file_name, context.allocator) or_return
+    
+    extension := file_name[strings.last_index(file_name, ".") + 1:]
+    self.language_id = ts.get_language_id(extension)
 
     load_string(self, string(buffer_data), allocator)
 
@@ -38,6 +43,11 @@ load_string :: proc(self: ^Buffer, text: string, allocator := context.allocator)
     )
 
     remap_lines(self)
+
+    if self.language_id != -1 {
+        self.syntax_tree = ts.get_tree(self.language_id, self.text)
+        bake_highlighting(self)
+    }
 
     return
 }
@@ -63,6 +73,7 @@ insert_character :: proc(b: ^Buffer, r: byte, at: core.Position) {
     index := pos_to_index(b, at)
 
     update_text(b, fmt.aprint(b.text[:index], rune(r), b.text[index:], sep = ""))
+    update_tree(b, index, 0, 1)
 
     if index <= b.cursor.index do move_cursor_horizontal(b, 1)
 }
@@ -71,6 +82,7 @@ insert_string :: proc(b: ^Buffer, str: string, at: core.Position) {
     index := pos_to_index(b, at)
 
     update_text(b, fmt.aprint(b.text[:index], str, b.text[index:], sep = ""))
+    update_tree(b, index, 0, len(str))
 
     if index <= b.cursor.index do move_cursor_horizontal(b, len(str))
 }
@@ -79,6 +91,7 @@ insert_cstring :: proc(b: ^Buffer, str: cstring, at: core.Position) {
     index := pos_to_index(b, at)
 
     update_text(b, fmt.aprint(b.text[:index], str, b.text[index:], sep = ""))
+    update_tree(b, index, 0, len(str))
 
     if index <= b.cursor.index do move_cursor_horizontal(b, len(str))
 }
@@ -117,6 +130,7 @@ delete_range_index :: proc(b: ^Buffer, start_index, end_index: int) {
     }
 
     update_text(b, fmt.aprint(b.text[:start_index], b.text[end_index:], sep = ""))
+    update_tree(b, start_index, end_index - start_index, 0)
     set_cursor_index(b, new_index)
 }
 
@@ -244,6 +258,10 @@ undo :: proc(b: ^Buffer) -> bool {
     update_text(b, state.text)
     set_cursor_index(b, state.cursor_index)
 
+    for edit in state.edits {
+        update_tree(b, edit.start, edit.new_length, edit.old_length)
+    }
+
     return true
 }
 
@@ -253,9 +271,90 @@ redo :: proc(b: ^Buffer) -> bool {
     update_text(b, state.text)
     set_cursor_index(b, state.cursor_index)
 
+    for edit in state.edits {
+        update_tree(b, edit.start, edit.old_length, edit.new_length)
+    }
+
     return true
 }
 
 destroy_buffer_state :: proc(state: core.BufferState) {
     delete(state.text)
+    delete(state.edits)
+}
+
+update_tree :: proc(b: ^Buffer, at: int, old_length: int, new_length: int) {
+    if b.language_id == -1 do return
+
+    append(&b.open_history_state.edits, core.BufferEdit{at, old_length, new_length})
+
+    start_pos := index_to_pos(b, at)
+    old_end_pos := index_to_pos(b, at + old_length)
+    new_end_pos := index_to_pos(b, at + new_length)
+
+    old_tree := b.syntax_tree
+    b.syntax_tree = ts.update_tree(
+        b.language_id,
+        b.syntax_tree,
+        at,
+        at + old_length,
+        at + new_length,
+        {u32(start_pos.y), u32(start_pos.x)},
+        {u32(old_end_pos.y), u32(old_end_pos.x)},
+        {u32(new_end_pos.y), u32(new_end_pos.x)},
+        b.text,
+    )
+    ts.delete_tree(old_tree)
+
+    bake_highlighting(b)
+}
+
+bake_highlighting :: proc(b: ^Buffer) {
+    iter, _ := ts.start_highlight_iter(b.language_id, b.text, context.temp_allocator)
+
+    highlight_stack := make([dynamic]highlight.Highlight, context.temp_allocator)
+    current_fragment := core.Fragment{}
+    fragment_index := 0
+
+    for event in highlight.iterate_highlight_iter(&iter) {
+        switch event_type in event {
+        case highlight.StartEvent:
+            append(&highlight_stack, current_fragment.highlight)
+            current_fragment.highlight = event_type.highlight
+
+        case highlight.SourceEvent:
+            current_fragment.start = event_type.start
+            current_fragment.end = event_type.end
+
+            for b.lines[current_fragment.line_index].start > current_fragment.start do current_fragment.line_index += 1
+
+            for current_fragment.start < event_type.end {
+                if event_type.end > b.lines[current_fragment.line_index].end {
+                    current_fragment.end = b.lines[current_fragment.line_index].end
+                }
+
+                if fragment_index < len(b.fragments) {
+                    b.fragments[fragment_index] = current_fragment
+                } else {
+                    append(&b.fragments, current_fragment)
+                }
+
+                fragment_index += 1
+                current_fragment.start = current_fragment.end + 1
+                current_fragment.end = event_type.end
+
+                if current_fragment.end > b.lines[current_fragment.line_index].end {
+                    current_fragment.line_index += 1
+                }
+            }
+        case highlight.EndEvent:
+            current_fragment.highlight = pop(&highlight_stack)
+
+        }
+    }
+    highlight.destroy_highlight_iter(&iter)
+    
+    for fragment_index < len(b.fragments) {
+        pop(&b.fragments)
+    }
 }

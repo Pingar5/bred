@@ -7,12 +7,14 @@ import "bred:core/command"
 import "bred:core/editor"
 import "bred:core/font"
 import "bred:core/layout"
+import ts "bred:lib/treesitter"
 import "bred:util/logger"
 import "bred:util/pool"
 import "user:config"
 
 import "core:log"
 import "core:mem"
+import "core:strings"
 import rl "vendor:raylib"
 
 tracking_allocator: mem.Tracking_Allocator
@@ -42,6 +44,12 @@ main :: proc() {
         rl.SetWindowPosition(i32(monitor_position.x), i32(monitor_position.y))
         rl.SetWindowState({.WINDOW_MAXIMIZED, .WINDOW_RESIZABLE})
     }
+
+    colors.init()
+    defer colors.quit()
+
+    ts.init()
+    defer ts.quit()
 
     font.init()
     defer font.quit()
@@ -84,15 +92,33 @@ main :: proc() {
 check_tracking_allocator :: proc() {
     if len(tracking_allocator.allocation_map) > 0 {
         log.errorf("=== %v allocations not freed: ===\n", len(tracking_allocator.allocation_map))
+
+        treesitter_count := 0
         for _, entry in tracking_allocator.allocation_map {
+            if strings.contains(entry.location.file_path, "helpers.odin") {
+                treesitter_count += 1
+                continue
+            }
+
             log.errorf("- %v bytes @ %v\n", entry.size, entry.location)
         }
+
+        if treesitter_count > 0 do log.errorf("- %d allocations from treesitter not shown\n", treesitter_count)
     }
 
     if len(tracking_allocator.bad_free_array) > 0 {
         log.errorf("=== %v incorrect frees: ===\n", len(tracking_allocator.bad_free_array))
+        
+        treesitter_count := 0
         for entry in tracking_allocator.bad_free_array {
+            if strings.contains(entry.location.file_path, "helpers.odin") {
+                treesitter_count += 1
+                continue
+            }
+            
             log.errorf("- %p @ %v\n", entry.memory, entry.location)
         }
+        
+        if treesitter_count > 0 do log.errorf("- %d allocations from treesitter not shown\n", treesitter_count)
     }
 }

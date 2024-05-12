@@ -102,3 +102,19 @@ ensure_cursor_visible :: proc(state: ^core.EditorState, self: ^core.Portal, move
         data.scroll = max(data.scroll, 0)
     }
 }
+
+center_cursor :: proc(state: ^core.EditorState, self: ^core.Portal) {
+    assert(self.type == "editor", "Cannot run center_cursor on a portal that isn't a file editor")
+    
+    contents, ok := buffer.get_buffer(state, self.buffer)
+    if !ok do return
+
+    data := transmute(^FilePortalData)self.config
+
+    center := self.rect.height / 2
+    if contents.cursor.pos.y < center {
+        data.scroll = 0
+    } else {
+        data.scroll = contents.cursor.pos.y - center
+    }
+}

@@ -251,7 +251,6 @@ start_history_state :: proc(b: ^Buffer) {
 }
 
 write_to_history :: proc(b: ^Buffer) {
-    log.debug(b.open_history_state, "\n")
     b.open_history_state.cursor_index = b.cursor.index
     b.open_history_state.text = b.text
     history.write(&b.history, b.open_history_state)
@@ -262,7 +261,6 @@ undo :: proc(b: ^Buffer) -> bool {
     state := history.undo(&b.history) or_return
 
     b.text = state.text
-    log.debug(state.id, b.last_saved_state_id, "\n")
     b.is_dirty = state.id != b.last_saved_state_id
     remap_lines(b)
 

@@ -115,22 +115,25 @@ BufferEdit :: struct {
 }
 
 BufferState :: struct {
+    id:           int,
     text:         string,
     cursor_index: int,
     edits:        [dynamic]BufferEdit,
 }
 
 Buffer :: struct {
-    file_path:          string,
-    is_dirty:           bool,
-    text:               string,
-    cursor:             Cursor,
-    lines:              [dynamic]Line,
-    history:            history.History(BufferState),
-    syntax_tree:        ts.Tree,
-    open_history_state: BufferState,
-    fragments:          [dynamic]Fragment,
-    language_id:        int,
+    file_path:           string,
+    is_dirty:            bool,
+    text:                string,
+    cursor:              Cursor,
+    lines:               [dynamic]Line,
+    history:             history.History(BufferState),
+    syntax_tree:         ts.Tree,
+    open_history_state:  BufferState,
+    fragments:           [dynamic]Fragment,
+    language_id:         int,
+    last_saved_state_id: int,
+    next_save_state_id:  int,
 }
 
 destroy_buffer :: proc(b: Buffer) {

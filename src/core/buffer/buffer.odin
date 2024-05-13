@@ -19,7 +19,7 @@ Buffer :: core.Buffer
 
 load_file :: proc(self: ^Buffer, file_name: string, allocator := context.allocator) -> (ok: bool) {
     buffer_data := os.read_entire_file(file_name, context.allocator) or_return
-    
+
     extension := file_name[strings.last_index(file_name, ".") + 1:]
     self.language_id = ts.get_language_id(extension)
 
@@ -248,12 +248,15 @@ get_indent :: proc(b: ^Buffer, line_idx: int) -> (indent: int) {
 }
 
 start_history_state :: proc(b: ^Buffer) {
+    b.next_save_state_id += 1
     b.open_history_state = {
+        id = b.next_save_state_id,
         edits = make([dynamic]core.BufferEdit),
     }
 }
 
 write_to_history :: proc(b: ^Buffer) {
+    log.debug(b.open_history_state, "\n")
     b.open_history_state.cursor_index = b.cursor.index
     b.open_history_state.text = b.text
     history.write(&b.history, b.open_history_state)
@@ -263,7 +266,11 @@ write_to_history :: proc(b: ^Buffer) {
 undo :: proc(b: ^Buffer) -> bool {
     state := history.undo(&b.history) or_return
 
-    update_text(b, state.text)
+    b.text = state.text
+    log.debug(state.id, b.last_saved_state_id, "\n")
+    b.is_dirty = state.id != b.last_saved_state_id
+    remap_lines(b)
+
     set_cursor_index(b, state.cursor_index)
 
     for edit in state.edits {
@@ -278,7 +285,10 @@ undo :: proc(b: ^Buffer) -> bool {
 redo :: proc(b: ^Buffer) -> bool {
     state := history.redo(&b.history) or_return
 
-    update_text(b, state.text)
+    b.text = state.text
+    b.is_dirty = state.id != b.last_saved_state_id
+    remap_lines(b)
+    
     set_cursor_index(b, state.cursor_index)
 
     for edit in state.edits {
@@ -363,7 +373,7 @@ bake_highlighting :: proc(b: ^Buffer) {
         }
     }
     highlight.destroy_highlight_iter(&iter)
-    
+
     for fragment_index < len(b.fragments) {
         pop(&b.fragments)
     }

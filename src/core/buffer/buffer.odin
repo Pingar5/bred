@@ -65,38 +65,27 @@ save :: proc(b: ^Buffer) -> bool {
         log.error("Failed to write to file")
     }
     b.is_dirty = false
+    
+    current_save_state := history.get_ref(&b.history)
+    b.last_saved_state_id = current_save_state.id
 
     return ok
 }
 
 insert_character :: proc(b: ^Buffer, r: byte, at: core.Position) {
-    index := pos_to_index(b, at)
+    str_backing := [1]u8{r}
+    insert_string(b, transmute(string)str_backing[:], at)
+}
 
-    update_text(b, fmt.aprint(b.text[:index], rune(r), b.text[index:], sep = ""))
-    update_tree(b, index, 0, 1)
-
-    bake_highlighting(b)
-
-    if index <= b.cursor.index do move_cursor_horizontal(b, 1)
+insert_cstring :: proc(b: ^Buffer, cstr: cstring, at: core.Position) {
+    str := strings.clone_from_cstring(cstr, context.temp_allocator)
+    insert_string(b, str, at)
 }
 
 insert_string :: proc(b: ^Buffer, str: string, at: core.Position) {
     index := pos_to_index(b, at)
 
-    update_text(b, fmt.aprint(b.text[:index], str, b.text[index:], sep = ""))
-    update_tree(b, index, 0, len(str))
-
-    bake_highlighting(b)
-
-    if index <= b.cursor.index do move_cursor_horizontal(b, len(str))
-}
-
-insert_cstring :: proc(b: ^Buffer, str: cstring, at: core.Position) {
-    index := pos_to_index(b, at)
-
-    update_text(b, fmt.aprint(b.text[:index], str, b.text[index:], sep = ""))
-    update_tree(b, index, 0, len(str))
-
+    splice(b, index, index, str)
     bake_highlighting(b)
 
     if index <= b.cursor.index do move_cursor_horizontal(b, len(str))
@@ -135,8 +124,7 @@ delete_range_index :: proc(b: ^Buffer, start_index, end_index: int) {
         new_index = max(start_index, new_index - range_length)
     }
 
-    update_text(b, fmt.aprint(b.text[:start_index], b.text[end_index:], sep = ""))
-    update_tree(b, start_index, end_index - start_index, 0)
+    splice(b, start_index, end_index)
 
     bake_highlighting(b)
     set_cursor_index(b, new_index)
@@ -192,10 +180,17 @@ index_to_pos :: proc(b: ^Buffer, index: int, loc := #caller_location) -> core.Po
 }
 
 @(private)
-update_text :: proc(b: ^Buffer, new_text: string) {
+splice :: proc(b: ^Buffer, from, to: int, insert: any = "") {
+    new_text := fmt.aprint(b.text[:from], insert, b.text[to:], sep = "")
+    old_length := to - from
+    unchanged_length := len(b.text) - old_length
+    new_length := len(new_text) - unchanged_length
+
+    append(&b.open_history_state.edits, core.BufferEdit{from, old_length, new_length})
     b.text = new_text
     b.is_dirty = true
 
+    update_tree(b, from, old_length, new_length)
     remap_lines(b)
 }
 
@@ -307,8 +302,6 @@ destroy_buffer_state :: proc(state: core.BufferState) {
 
 update_tree :: proc(b: ^Buffer, at: int, old_length: int, new_length: int) {
     if b.language_id == -1 do return
-
-    append(&b.open_history_state.edits, core.BufferEdit{at, old_length, new_length})
 
     start_pos := index_to_pos(b, at)
     old_end_pos := index_to_pos(b, at + old_length)

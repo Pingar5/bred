@@ -139,7 +139,7 @@ init :: proc(state: ^core.EditorState) {
         state.portals[0].buffer = buffer_id
 
         // NOTE: Bred does not currently have a built-in component for opening files at runtime. However, I have one in my
-        // config which you can take a look at for an example: https://github.com/Pingar5/bred-config/tree/master/file_browser
+        // config which you can take a look at for an example: https://github.com/Pingar5/bred-config/blob/master/components/file_browser
     }
 }
 

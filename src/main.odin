@@ -108,17 +108,17 @@ check_tracking_allocator :: proc() {
 
     if len(tracking_allocator.bad_free_array) > 0 {
         log.errorf("=== %v incorrect frees: ===\n", len(tracking_allocator.bad_free_array))
-        
+
         treesitter_count := 0
         for entry in tracking_allocator.bad_free_array {
             if strings.contains(entry.location.file_path, "helpers.odin") {
                 treesitter_count += 1
                 continue
             }
-            
+
             log.errorf("- %p @ %v\n", entry.memory, entry.location)
         }
-        
+
         if treesitter_count > 0 do log.errorf("- %d allocations from treesitter not shown\n", treesitter_count)
     }
 }

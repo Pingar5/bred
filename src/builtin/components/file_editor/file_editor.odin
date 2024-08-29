@@ -17,7 +17,7 @@ FilePortalData :: struct {
 create_file_portal :: proc(rect: core.Rect) -> core.Portal {
     render_file_portal :: proc(self: ^core.Portal, state: ^core.EditorState) {
         contents, ok := buffer.get_buffer(state, self.buffer)
-        data := transmute(^FilePortalData)self.config
+        data := cast(^FilePortalData)self.config
 
         font.draw_bg_rect(
             {components = {self.rect.left, self.rect.top, 3, self.rect.height}},
@@ -79,7 +79,7 @@ create_file_portal :: proc(rect: core.Rect) -> core.Portal {
 }
 
 destroy_file_portal :: proc(self: ^core.Portal) {
-    data := transmute(^FilePortalData)self.config
+    data := cast(^FilePortalData)self.config
     free(data)
 }
 
@@ -87,7 +87,7 @@ ensure_cursor_visible :: proc(state: ^core.EditorState, self: ^core.Portal, move
     contents, ok := buffer.get_buffer(state, self.buffer)
     if !ok do return
 
-    data := transmute(^FilePortalData)self.config
+    data := cast(^FilePortalData)self.config
 
     cursor_screen_line := contents.cursor.pos.y - data.scroll
 
@@ -109,7 +109,7 @@ center_cursor :: proc(state: ^core.EditorState, self: ^core.Portal) {
     contents, ok := buffer.get_buffer(state, self.buffer)
     if !ok do return
 
-    data := transmute(^FilePortalData)self.config
+    data := cast(^FilePortalData)self.config
 
     center := self.rect.height / 2
     if contents.cursor.pos.y < center {

@@ -17,7 +17,7 @@ TreeViewerData :: struct {
 
 create_tree_viewer :: proc(rect: core.Rect, portal_to_follow: int) -> core.Portal {
     render_tree_viewer :: proc(self: ^core.Portal, state: ^core.EditorState) {
-        data := transmute(^TreeViewerData)self.config
+        data := cast(^TreeViewerData)self.config
         other_portal := state.portals[data.portal_to_follow]
 
         target_buffer, ok := buffer.get_buffer(state, other_portal.buffer)
@@ -58,7 +58,7 @@ create_tree_viewer :: proc(rect: core.Rect, portal_to_follow: int) -> core.Porta
 
 
             if line == data.cursor {
-                other_data := transmute(^file_editor.FilePortalData)other_portal.config
+                other_data := cast(^file_editor.FilePortalData)other_portal.config
 
                 if info.start_pos.row == info.end_pos.row {
                     font.draw_outline_rect(
@@ -111,6 +111,6 @@ create_tree_viewer :: proc(rect: core.Rect, portal_to_follow: int) -> core.Porta
 
 
 destroy_tree_viewer :: proc(self: ^core.Portal) {
-    data := transmute(^TreeViewerData)self.config
+    data := cast(^TreeViewerData)self.config
     free(data)
 }

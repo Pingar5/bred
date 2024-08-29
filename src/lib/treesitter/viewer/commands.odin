@@ -6,7 +6,7 @@ import "bred:core/portal"
 
 move_cursor_up :: proc(state: ^core.EditorState, wildcards: []core.WildcardValue) -> bool {
     self := portal.get_active_portal(state)
-    data := transmute(^TreeViewerData)self.config
+    data := cast(^TreeViewerData) self.config
 
     data.cursor -= 1
     data.cursor = max(data.cursor, 0)
@@ -16,7 +16,7 @@ move_cursor_up :: proc(state: ^core.EditorState, wildcards: []core.WildcardValue
 
 move_cursor_down :: proc(state: ^core.EditorState, wildcards: []core.WildcardValue) -> bool {
     self := portal.get_active_portal(state)
-    data := transmute(^TreeViewerData)self.config
+    data := cast(^TreeViewerData)self.config
 
     data.cursor += 1
     data.cursor = min(data.cursor, data.node_count)

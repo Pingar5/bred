@@ -3,7 +3,7 @@ package ts
 // This file adds helpers and convenience procedures.
 
 import "core:mem"
-import "core:runtime"
+import "base:runtime"
 import "core:fmt"
 
 @(private)
